@@ -1,0 +1,23 @@
+import requests
+
+def get_nhl_data(endpoint):
+    base_url = "https://api-web.nhle.com/v1/standings/now"
+    url = f"{base_url}{endpoint}"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+def main():
+    endpoint = ""
+    data = get_nhl_data(endpoint)
+    
+    if data:
+        print(data)
+    else:
+        print("Failed to retrieve data")
+
+if __name__ == "__main__":
+    main()
