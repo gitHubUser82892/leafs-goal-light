@@ -260,7 +260,7 @@ def start_game():
 
 
 
-def main():
+def goal_tracker_main():
     global game_is_live  # Use the global variable
     global toronto_is_home 
 
@@ -293,5 +293,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    goal_tracker_main()
 
