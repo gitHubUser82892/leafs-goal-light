@@ -291,6 +291,9 @@ def goal_tracker_main():
     print("\nEND\n")
 
 
+def test_pyscript():
+    post_to_webhook(1)
+
 
 if __name__ == "__main__":
     goal_tracker_main()
