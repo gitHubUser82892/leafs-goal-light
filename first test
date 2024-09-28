@@ -23,7 +23,7 @@ toronto_score = 0
 opponent_score = 0
 
 # Home Assistant Webook URL
-HA_WEBHOOK_URL = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTnD"
+HA_WEBHOOK_URL = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
 
 
 #
