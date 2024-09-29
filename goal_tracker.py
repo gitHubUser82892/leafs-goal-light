@@ -291,6 +291,7 @@ def goal_tracker_main():
     print("\nEND\n")
 
 
+@service
 def test_pyscript():
     post_to_webhook(1)
 
