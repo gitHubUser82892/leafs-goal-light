@@ -4,6 +4,8 @@
 # # These are the header comments.  
 # Change from external nabu casa to local so I don't reveal my external URL and webhook
 #
+# Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
+#
 # #
 
 
@@ -156,7 +158,7 @@ def current_toronto_game():
                     away_team_id = game.get('awayTeam', {}).get('id')
                     home_team_id = game.get('homeTeam', {}).get('id')
                 
-                    if away_team_id == 10 or home_team_id == 10:
+                    if away_team_id == 10 or home_team_id == 10:  # Toronto is team id 10
                         print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
                         game_today = True
 
@@ -194,7 +196,7 @@ def current_toronto_game():
                 game_today = False
                 game_about_to_start = False
                 return None
-            else:
+            else:  # There are no games today at all
                 print(f"No games today")
                 game_is_live = False
                 game_today = False
@@ -284,10 +286,11 @@ def goal_tracker_main():
 
     while (True):  # Keep checking for games
      
+        # Makes a call to the NHL API to get the game schedule.  
         # Should run this only a few times a day, and then start calling boxscore within 5 minutes of start time
         gameId = current_toronto_game()
 
-        # Use this got debugging to force a specific game to be found
+        # Use this for debugging to force a specific game to be found
         #gameId = "2024010006"
         #start_game()
         #toronto_is_home = True
@@ -298,7 +301,7 @@ def goal_tracker_main():
 
         while (game_is_live == True or game_about_to_start == True):
                     boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
-                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this, as boxscore seems to be just as up to date
+                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this now, as boxscore seems to be just as up to date
                     check_scores(boxscore_data, playbyplay_data)  # Check the scores for new goals
                     time.sleep(15) # Check scores every 15 seconds
         
