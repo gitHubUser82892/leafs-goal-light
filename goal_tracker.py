@@ -24,6 +24,7 @@ game_in_intermission = False
 toronto_is_home = False
 toronto_score = 0
 opponent_score = 0
+game_today = False
 
 # Home Assistant Webook URL
 HA_WEBHOOK_URL = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
@@ -150,17 +151,18 @@ def current_toronto_game():
                     # print(json.dumps(game, indent=4))
 
                     if away_team_id == 10 or home_team_id == 10:
+                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
+                        game_today = True
+
+                        # Toronto is playing today.  Get the gameId and start time
                         gameId=(game.get('id'))
                         startTimeUTC = game.get('startTimeUTC')
 
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                         current_time = datetime.now(pytz.UTC)
-
-                    
                         
-                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
-
+                        # Check if the game is live
                         gameState = game.get('gameState')
                         if gameState == 'LIVE':
                             print(f"Game is LIVE!")
@@ -178,13 +180,16 @@ def current_toronto_game():
                 # if we exit the for loop, then no Toronto games were found today
                 print(f"No Toronto games today")
                 game_is_live = False
+                game_today = False
                 return None
             else:
                 print(f"No games today")
                 game_is_live = False
+                game_today = False
                 return None
     else:
          game_is_live = False
+         game_today = False
          print("Failed to retrieve data")
     return None                   
     
@@ -237,10 +242,6 @@ def check_scores(boxscore_data, playbyplay_data):
             print(f"Boxscore: OPPONENT GOAL\n")
             opponent_score = home_team_score
 
-    # check the play by play data
-    # Do I need to?  Is it any different speed than the play by play data?
-
-
     return
 
 
@@ -264,34 +265,35 @@ def goal_tracker_main():
     global game_is_live  # Use the global variable
     global toronto_is_home 
 
-    while (True):     # Check every 5 minutes
+    while (True):  # Keep checking for games
      
         # Should run this only a few times a day, and then start calling boxscore within 5 minutes of start time
         gameId = current_toronto_game()
 
-        # Use this to force a specific game to be found
+        # Use this got debugging to force a specific game to be found
         #gameId = "2024010006"
         #start_game()
         #toronto_is_home = True
         
-
+        if game_today == False:
+            time.sleep(60*60*24)  # Pause for 24 hours if there's no game today
 
         while (game_is_live == True or game_about_to_start == True):
             #    for _ in range(1):
                     boxscore_data = get_boxscore_data(gameId)
-                    playbyplay_data = get_playbyplay_data(gameId)
+                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this yet
                     check_scores(boxscore_data, playbyplay_data)
                     time.sleep(15)
         
         print(f"No active game\n")
 
-        time.sleep(2*60)
+        time.sleep(2*60)  # Check every 2 minutes
     
 
     print("\nEND\n")
 
 
-@service
+#@service
 def test_pyscript():
     print(f"test post\n")
     post_to_webhook(1)
