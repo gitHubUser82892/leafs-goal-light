@@ -276,7 +276,8 @@ def goal_tracker_main():
         #toronto_is_home = True
         
         if game_today == False:
-            time.sleep(60*60*24)  # Pause for 24 hours if there's no game today
+            print(f"Pausing for 8 hours as there is no game today\n")
+            time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         while (game_is_live == True or game_about_to_start == True):
             #    for _ in range(1):
