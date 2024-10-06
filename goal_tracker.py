@@ -133,6 +133,8 @@ def get_playbyplay_data(gameId):
 def current_toronto_game():
     global game_is_live  # Use the global variable
     global toronto_is_home
+    global game_today
+    global game_about_to_start
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -147,9 +149,7 @@ def current_toronto_game():
                 for game in game_week.get('games', []):
                     away_team_id = game.get('awayTeam', {}).get('id')
                     home_team_id = game.get('homeTeam', {}).get('id')
-                    
-                    # print(json.dumps(game, indent=4))
-
+                
                     if away_team_id == 10 or home_team_id == 10:
                         print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
                         game_today = True
@@ -161,6 +161,12 @@ def current_toronto_game():
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                         current_time = datetime.now(pytz.UTC)
+
+                        # Check if the game is about to start
+                        if (start_time - current_time).total_seconds() < 300:
+                            print(f"Game is about to start!")
+                            game_about_to_start = True
+                            return gameId
                         
                         # Check if the game is live
                         gameState = game.get('gameState')
@@ -260,10 +266,13 @@ def start_game():
     opponent_score = 0
 
 
-
+#
+# Main function
+#
 def goal_tracker_main():
     global game_is_live  # Use the global variable
     global toronto_is_home 
+    global game_today
 
     while (True):  # Keep checking for games
      
@@ -280,11 +289,10 @@ def goal_tracker_main():
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         while (game_is_live == True or game_about_to_start == True):
-            #    for _ in range(1):
                     boxscore_data = get_boxscore_data(gameId)
-                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this yet
+                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this, as boxscore seems to be just as up to date
                     check_scores(boxscore_data, playbyplay_data)
-                    time.sleep(15)
+                    time.sleep(15) # Check scores every 15 seconds
         
         print(f"No active game\n")
 
@@ -292,12 +300,6 @@ def goal_tracker_main():
     
 
     print("\nEND\n")
-
-
-#@service
-def test_pyscript():
-    print(f"test post\n")
-    post_to_webhook(1)
 
 
 if __name__ == "__main__":
