@@ -10,14 +10,10 @@
 
 
 import requests
-import logging
 import time
 import json
 import pytz
 from datetime import datetime
-
-# Configure logging
-logging.basicConfig(filename='output.log', level=logging.INFO, format='%(message)s')
 
 # Global variables
 game_is_live = False
