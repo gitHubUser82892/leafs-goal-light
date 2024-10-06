@@ -3,7 +3,7 @@
 #
 # # These are the header comments.  
 # Change from external nabu casa to local so I don't reveal my external URL and webhook
-# Testing a change
+#
 # #
 
 
@@ -26,12 +26,15 @@ toronto_score = 0
 opponent_score = 0
 game_today = False
 
-# Home Assistant Webook URL
+#
+# Home Assistant Webook URL with private key
+#
+# I'm ok with this being in the code, as it's a webhook that is only accessible from my local network
 HA_WEBHOOK_URL = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
 
 
 #
-#
+# This is the direct call to the NHL API
 #
 def get_apiweb_nhl_data(endpoint):
     base_url = "https://api-web.nhle.com/"
@@ -41,10 +44,12 @@ def get_apiweb_nhl_data(endpoint):
     if response.status_code == 200:
         return response.json()
     else:
+        print(f"Failed to retrieve data from NHL API: {response.status_code}")
         return None
 
+
 #
-#
+# Pull the boxscore data from the API and do some parsing
 #
 def get_boxscore_data(gameId):
     global game_is_live
@@ -54,7 +59,6 @@ def get_boxscore_data(gameId):
     print(f"== Boxscore data: " + endpoint + f" {datetime.now()}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
-        #print(data, "\n")
         
         game_state = data.get('gameState')
         if game_state != 'LIVE':
@@ -69,12 +73,13 @@ def get_boxscore_data(gameId):
         #    game_in_intermission = False
 
 
+        # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
         away_team = data.get('awayTeam', {})
-
         home_team_score = home_team.get('score')
         away_team_score = away_team.get('score')
 
+        # Print the current scores
         if home_team_score is not None:
             if toronto_is_home == True:
                 print(f"Home Team (Toronto) Score: {home_team_score}")
@@ -96,8 +101,9 @@ def get_boxscore_data(gameId):
     else:
         print("Failed to retrieve data")
 
+
 #
-#
+# Main function to get the play by play data and determine the current score from the API
 #
 def get_playbyplay_data(gameId):
     endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
@@ -128,7 +134,7 @@ def get_playbyplay_data(gameId):
 
 
 #
-# # Return the gameId if Toronto is playing now
+# Return the gameId if Toronto is playing now or determine if it's about to start
 #
 def current_toronto_game():
     global game_is_live  # Use the global variable
@@ -161,47 +167,49 @@ def current_toronto_game():
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                         current_time = datetime.now(pytz.UTC)
-
-                        # Check if the game is about to start
-                        if (start_time - current_time).total_seconds() < 300:
-                            print(f"Game is about to start!")
-                            game_about_to_start = True
-                            return gameId
                         
-                        # Check if the game is live
+                        # Check if the game is live or about to start or will be later in the day
                         gameState = game.get('gameState')
-                        if gameState == 'LIVE':
+                        if gameState == 'LIVE':  # Check if the game is live
                             print(f"Game is LIVE!")
-                            if game_is_live == False:
+                            if game_is_live == False:  # If the game wasn't already live, then set it as started
                                     start_game()
                                     if home_team_id == 10:
                                         toronto_is_home = True
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        else:
+                        elif (start_time - current_time).total_seconds() < 300:  # If it's not started, but it will within 5 minutes
+                            print(f"Game is about to start!")
+                            game_about_to_start = True
+                            return gameId
+                        else:  # If it's not live or about to start, then it's later in the day
                             print(f"Game is starting at {start_time}")
+                            game_about_to_start = False
                             return None
 
                 # if we exit the for loop, then no Toronto games were found today
                 print(f"No Toronto games today")
                 game_is_live = False
                 game_today = False
+                game_about_to_start = False
                 return None
             else:
                 print(f"No games today")
                 game_is_live = False
                 game_today = False
+                game_about_to_start = False
                 return None
     else:
          game_is_live = False
          game_today = False
+         game_about_to_start = False
          print("Failed to retrieve data")
     return None                   
     
 
 #
-# POST to webhook
+# POST to webhook to drive the HomeAssistant automation
 #
 def post_to_webhook(message):
     payload = {"text": message}
@@ -289,14 +297,14 @@ def goal_tracker_main():
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         while (game_is_live == True or game_about_to_start == True):
-                    boxscore_data = get_boxscore_data(gameId)
+                    boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
                     # playbyplay_data = get_playbyplay_data(gameId)   # Not using this, as boxscore seems to be just as up to date
-                    check_scores(boxscore_data, playbyplay_data)
+                    check_scores(boxscore_data, playbyplay_data)  # Check the scores for new goals
                     time.sleep(15) # Check scores every 15 seconds
         
         print(f"No active game\n")
 
-        time.sleep(2*60)  # Check every 2 minutes
+        time.sleep(2*60)  # Check every 2 minutes if the game has started or it's about to start
     
 
     print("\nEND\n")
