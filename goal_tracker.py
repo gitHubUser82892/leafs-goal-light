@@ -155,12 +155,12 @@ def current_toronto_game():
                     home_team_id = game.get('homeTeam', {}).get('id')
                 
                     if away_team_id == 10 or home_team_id == 10:  # Toronto is team id 10
-                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
                         game_today = True
 
                         # Toronto is playing today.  Get the gameId and start time
-                        gameId=(game.get('id'))
+                        gameId = (game.get('id'))
                         startTimeUTC = game.get('startTimeUTC')
+                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
 
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
