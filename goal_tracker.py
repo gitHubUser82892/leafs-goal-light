@@ -160,12 +160,13 @@ def current_toronto_game():
                         # Toronto is playing today.  Get the gameId and start time
                         gameId = (game.get('id'))
                         startTimeUTC = game.get('startTimeUTC')
-                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
 
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                         current_time = datetime.now(pytz.UTC)
                         
+                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
+
                         # Check if the game is live or about to start or will be later in the day
                         gameState = game.get('gameState')
                         if gameState == 'LIVE':  # Check if the game is live
@@ -225,10 +226,12 @@ def post_to_webhook(message):
 #
 # Check the current scores to see if there has been a recent goal
 #
-def check_scores(boxscore_data, playbyplay_data):
+def check_scores(boxscore_data):
     global toronto_score
     global opponent_score
     global toronto_is_home
+    home_team_score = 0
+    away_team_score = 0
 
     # check the boxscore data
     home_team = boxscore_data.get('homeTeam', {})
@@ -295,10 +298,10 @@ def goal_tracker_main():
             print(f"Pausing for 8 hours as there is no game today\n")
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
-        while (game_is_live == True or game_about_to_start == True):
+        while (game_is_live == True):
                     boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
                     # playbyplay_data = get_playbyplay_data(gameId)   # Not using this now, as boxscore seems to be just as up to date
-                    check_scores(boxscore_data, playbyplay_data)  # Check the scores for new goals
+                    check_scores(boxscore_data)  # Check the scores for new goals
                     time.sleep(15) # Check scores every 15 seconds
         
         print(f"No active game\n")
