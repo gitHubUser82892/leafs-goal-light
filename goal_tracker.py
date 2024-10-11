@@ -279,9 +279,10 @@ def start_game():
 # Main function
 #
 def goal_tracker_main():
-    global game_is_live  # Use the global variable
-    global toronto_is_home 
-    global game_today
+    global game_is_live = False # Use the global variable
+    global game_about_to_start = False
+    global toronto_is_home = False
+    global game_today = False
 
     while (True):  # Keep checking for games
      
@@ -306,7 +307,10 @@ def goal_tracker_main():
         
         print(f"No active game\n")
 
-        time.sleep(2*60)  # Check every 2 minutes if the game has started or it's about to start
+        if (game_about_to_start == True):
+            time.sleep(30)  # Check every 30 seconds if the game is about to start
+        else: 
+            time.sleep(5*60)  # 5 minute delay before checking pp
     
 
     print("\nEND\n")
