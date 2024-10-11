@@ -279,10 +279,15 @@ def start_game():
 # Main function
 #
 def goal_tracker_main():
-    global game_is_live = False # Use the global variable
-    global game_about_to_start = False
-    global toronto_is_home = False
-    global game_today = False
+    global game_is_live # Use the global variable
+    global game_about_to_start
+    global toronto_is_home 
+    global game_today
+
+    game_is_live = False
+    game_about_to_start = False
+    toronto_is_home = False
+    game_today = False 
 
     while (True):  # Keep checking for games
      
