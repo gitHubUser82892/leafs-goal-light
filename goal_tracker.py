@@ -63,14 +63,6 @@ def get_boxscore_data(gameId):
             # mark the game as ended
             game_is_live = False
 
-        # Use this to optimize the refresh times, but would need to check in more frequently as it ends
-        #intermission = data.get('clock','inIntermission')
-        #if intermission == 'true':
-        #    game_in_intermission = True
-        #else:
-        #    game_in_intermission = False
-
-
         # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
         away_team = data.get('awayTeam', {})
@@ -162,10 +154,19 @@ def current_toronto_game():
                         startTimeUTC = game.get('startTimeUTC')
 
                         # Parse startTimeUTC to datetime object
-                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
-                        current_time = datetime.now(pytz.UTC)
+                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
+                        current_time = datetime.now(pytz.timezone('US/Eastern')).replace(tzinfo=pytz.timezone('US/Eastern'))
                         
                         print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
+
+                        # convert away_team_id to the name of the team
+                        # in the json, this is awayTeam.placeName.default
+                        opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                        if home_team_id == 10:  
+                            print(f"Toronto is the home team and playing against {opponent_team_name}")
+                        else:
+                            print(f"Toronto is the away team and playing against {opponent_team_name}")
+
 
                         # Check if the game is live or about to start or will be later in the day
                         gameState = game.get('gameState')
