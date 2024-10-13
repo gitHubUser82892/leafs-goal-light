@@ -343,7 +343,7 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(line_buffering=True)
 
     print(f"***************************************************************************")
-    print(f"*\n* Starting goal tracker at 1156 {datetime.now()}\n*\n")
+    print(f"*\n* Starting goal tracker at 1200 {datetime.now()}\n*\n")
 
     goal_tracker_main()
 
