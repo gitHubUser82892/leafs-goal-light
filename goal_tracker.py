@@ -336,13 +336,14 @@ if __name__ == "__main__":
     original_stdout = sys.stdout
 
     # Open a file for logging and set sys.stdout to the file
-    log_file = open('output.log', 'a')
+    log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
     # Redirect stdout to the file
     sys.stdout = log_file
     # Reconfigure stdout for immediate flushing
     sys.stdout.reconfigure(line_buffering=True)
 
-    print(f"*\n* Starting goal tracker at 11:38 {datetime.now()}\n*\n")
+    print(f"***************************************************************************\n")
+    print(f"*\n* Starting goal tracker at {datetime.now()}\n*\n")
 
     goal_tracker_main()
 
