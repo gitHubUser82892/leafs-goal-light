@@ -6,7 +6,6 @@
 #
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
-# checking for pull down
 # #
 
 
@@ -14,6 +13,7 @@ import requests
 import time
 import json
 import pytz
+import sys
 from datetime import datetime
 
 # Global variables
@@ -330,5 +330,18 @@ def goal_tracker_main():
 
 
 if __name__ == "__main__":
+
+    # direct output to a log file
+    original_stdout = sys.stdout
+
+    # Open a file for logging and set sys.stdout to the file
+    log_file = open('output.log', 'a')
+    # Redirect stdout to the file
+    sys.stdout = log_file
+    # Reconfigure stdout for immediate flushing
+    sys.stdout.reconfigure(line_buffering=True)
+
+    print(f"*\n* Starting goal tracker at {datetime.now()}\n*\n")
+
     goal_tracker_main()
 
