@@ -180,10 +180,16 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif (start_time - current_time).total_seconds() < 300:  # If it's not started, but it will within 5 minutes
+                        elif ((start_time - current_time).total_seconds() < 300) & ((start_time - current_time).total_seconds() > 0):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
+                        elif (start_time - current_time) < 0:
+                            print(f"Toronto played earlier today")
+                            game_today = False
+                            game_is_live = False
+                            game_about_to_start = False 
+                            return None
                         else:  # If it's not live or about to start, then it's later in the day
                             print(f"Game is starting at {start_time}")
                             game_about_to_start = False
@@ -310,7 +316,7 @@ def goal_tracker_main():
                     boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
                     # playbyplay_data = get_playbyplay_data(gameId)   # Not using this now, as boxscore seems to be just as up to date
                     check_scores(boxscore_data)  # Check the scores for new goals
-                    time.sleep(15) # Check scores every 15 seconds
+                    time.sleep(12) # Check scores every 12 seconds
         
         print(f"No active game\n")
 
