@@ -6,7 +6,7 @@
 #
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
-# try to push all the way through the pipeline.  11:38
+# try to push all the way through the pipeline.  11:53
 # #
 
 
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     sys.stdout.reconfigure(line_buffering=True)
 
     print(f"***************************************************************************\n")
-    print(f"*\n* Starting goal tracker at {datetime.now()}\n*\n")
+    print(f"*\n* Starting goal tracker at 1153 {datetime.now()}\n*\n")
 
     goal_tracker_main()
 
