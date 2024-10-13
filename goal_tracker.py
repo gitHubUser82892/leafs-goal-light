@@ -342,8 +342,8 @@ if __name__ == "__main__":
     # Reconfigure stdout for immediate flushing
     sys.stdout.reconfigure(line_buffering=True)
 
-    print(f"***************************************************************************\n")
-    print(f"*\n* Starting goal tracker at 1153 {datetime.now()}\n*\n")
+    print(f"***************************************************************************")
+    print(f"*\n* Starting goal tracker at 1156 {datetime.now()}\n*\n")
 
     goal_tracker_main()
 
