@@ -6,6 +6,15 @@
 #
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
+# TODO
+#    - Get the sound working through this script
+#    - Set the sound volume
+#    - Test both the start and goal sounds
+#    - Play to the right speaker
+#    - Move the webhook_listener into github
+#    - Fix all the paths for the webhook_listener
+#    - Test auto-crash recovery
+#
 # try to push all the way through the pipeline.  11:53
 # #
 
@@ -25,6 +34,12 @@ toronto_is_home = False
 toronto_score = 0
 opponent_score = 0
 game_today = False
+
+SONOS_IP = "192.168.86.250"  #  Office:1 Sonos speaker
+#SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
+RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
+SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
+SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
 
 #
 # Home Assistant Webook URL with private key
@@ -254,6 +269,7 @@ def check_scores(boxscore_data):
             print(f"Boxscore: TORONTO GOAL!\n")
             toronto_score = home_team_score
             post_to_webhook(1)
+            play_sound(SOUND_GOAL_HORN_FILE)
         if away_team_score > opponent_score:
             print(f"Boxscore: OPPONENT GOAL\n")
             opponent_score = away_team_score
@@ -261,6 +277,7 @@ def check_scores(boxscore_data):
         if away_team_score > toronto_score:
             print(f"Boxscore: TORONTO GOAL!\n")
             post_to_webhook(1)
+            play_sound(SOUND_GOAL_HORN_FILE)
             toronto_score = away_team_score
         if home_team_score > opponent_score:
             print(f"Boxscore: OPPONENT GOAL\n")
@@ -282,6 +299,47 @@ def start_game():
     game_about_to_start = False
     toronto_score = 0
     opponent_score = 0
+
+    play_sound(SOUND_GAME_START_FILE)
+
+
+
+#
+# Play the goal horn sound
+#
+# TODO: How do I set the volume?
+def play_sound(sound_file):
+    # Prepare the HTTP request
+    url = f"http://{SONOS_IP}:1400/MediaRenderer/AVTransport/Control"
+    
+    headers = {
+        "Content-Type": "audio/mpeg",  # Change to audio/mpeg for MP3
+        "SOAPACTION": '"urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI"',
+    }
+    
+    # The payload for the request
+    payload = f"""<?xml version="1.0" encoding="utf-8"?>
+    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
+                 s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+        <s:Body>
+            <SetAVTransportURI xmlns="urn:schemas-upnp-org:service:AVTransport:1">
+                <InstanceID>0</InstanceID>
+                <CurrentURI>http://{RASPPI_IP}{sound_file}</CurrentURI>  # Update to use MP3_FILE
+                <CurrentURIMetaData></CurrentURIMetaData>
+            </SetAVTransportURI>
+        </s:Body>
+    </s:Envelope>"""
+
+    # Send the request to the Sonos speaker
+    response = requests.post(url, headers=headers, data=payload)
+    if response.status_code == 200:
+        print("Audio sent to Sonos speaker.")
+    else:
+        print("Error:", response.text)
+
+
+
+
 
 
 #
@@ -324,16 +382,15 @@ def goal_tracker_main():
         if (game_about_to_start == True):
             time.sleep(30)  # Check every 30 seconds if the game is about to start
         else: 
-            time.sleep(5*60)  # 5 minute delay before checking pp
+            time.sleep(5*60)  # 5 minute delay before checking 
     
-
-    print("\nEND\n")
 
 
 if __name__ == "__main__":
 
     # direct output to a log file
     original_stdout = sys.stdout
+    original_stderr = sys.stderr
 
     # Open a file for logging and set sys.stdout to the file
     log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
@@ -341,6 +398,11 @@ if __name__ == "__main__":
     sys.stdout = log_file
     # Reconfigure stdout for immediate flushing
     sys.stdout.reconfigure(line_buffering=True)
+
+    # Redirect stderr to the file
+    sys.stderr = log_file
+    # Reconfigure stderr for immediate flushing
+    sys.stderr.reconfigure(line_buffering=True)
 
     print(f"***************************************************************************")
     print(f"*\n* Starting goal tracker at 1218 {datetime.now()}\n*\n")
