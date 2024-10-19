@@ -7,11 +7,7 @@
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
 # TODO
-#    - Play to the right speaker
-#    - Move the webhook_listener into github
-#    - Fix all the paths for the webhook_listener
 #    - Test auto-crash recovery of the webhook_listener
-#    - auto-start of the goal_tracker is not working
 #    - fix the github commit listener in homeassistant
 #
 #
@@ -321,7 +317,7 @@ def play_sound(sound_file):
     print(f"Connected to Sonos Speaker: {sonos.player_name}")
     print(f"Current Volume: {sonos.volume}")
     original_volume = sonos.volume
-    sonos.volume = 30
+    sonos.volume = 40
 
     # Play the MP3 file
     MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
@@ -363,11 +359,14 @@ def goal_tracker_main():
     global toronto_is_home 
     global game_today
 
-    play_sound(SOUND_GAME_START_FILE)
-    time.sleep(5)
-    activate_goal_light(1)
-    play_sound(SOUND_GOAL_HORN_FILE)
-    return # For now, just play the start sound and exit
+    debug_mode = False
+    if (debug_mode == True):
+        print(f"Debug mode is on\n")
+        play_sound(SOUND_GAME_START_FILE)
+        time.sleep(5)
+        activate_goal_light(1)
+        play_sound(SOUND_GOAL_HORN_FILE)
+        return # For now, just play the start sound and exit
 
     game_is_live = False
     game_about_to_start = False
