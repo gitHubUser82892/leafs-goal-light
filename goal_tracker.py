@@ -10,9 +10,14 @@
 #    - Play to the right speaker
 #    - Move the webhook_listener into github
 #    - Fix all the paths for the webhook_listener
-#    - Test auto-crash recovery
+#    - Test auto-crash recovery of the webhook_listener
+#    - auto-start of the goal_tracker is not working
+#    - fix the github commit listener in homeassistant
 #
-# try to push all the way through the pipeline.  11:53
+#
+# Instructions
+#    - To use new sound files:  ffmpeg -i file.wav file.mp3
+#    - webhook_listener running as systemd service
 # #
 
 
