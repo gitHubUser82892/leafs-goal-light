@@ -378,6 +378,10 @@ def goal_tracker_main():
         # Should run this only a few times a day, and then start calling boxscore within 5 minutes of start time
         gameId = current_toronto_game()
 
+        game_today = True
+        game_is_live = True
+        
+
         # Use this for debugging to force a specific game to be found
         #gameId = "2024010006"
         #start_game()
