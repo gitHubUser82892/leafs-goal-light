@@ -372,6 +372,7 @@ def goal_tracker_main():
         play_sound(SOUND_GOAL_HORN_FILE)
         return # For now, just play the start sound and exit
 
+    # Main loop
     while (True):  # Keep checking for games
      
         # Makes a call to the NHL API to get the game schedule.  
