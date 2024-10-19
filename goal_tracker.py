@@ -7,7 +7,6 @@
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
 # TODO
-#    - Test both the start and goal sounds
 #    - Play to the right speaker
 #    - Move the webhook_listener into github
 #    - Fix all the paths for the webhook_listener
@@ -34,8 +33,10 @@ toronto_score = 0
 opponent_score = 0
 game_today = False
 
-SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
+#SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
+SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
+
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
@@ -235,7 +236,7 @@ def current_toronto_game():
 #
 # POST to webhook to drive the HomeAssistant automation
 #
-def post_to_webhook(message):
+def activate_goal_light(message):
     payload = {"text": message}
     try:
         response = requests.post(HA_WEBHOOK_URL, json=payload)
@@ -269,7 +270,7 @@ def check_scores(boxscore_data):
         if home_team_score > toronto_score:
             print(f"Boxscore: TORONTO GOAL!\n")
             toronto_score = home_team_score
-            post_to_webhook(1)
+            activate_goal_light(1)
             play_sound(SOUND_GOAL_HORN_FILE)
         if away_team_score > opponent_score:
             print(f"Boxscore: OPPONENT GOAL\n")
@@ -277,7 +278,7 @@ def check_scores(boxscore_data):
     else:
         if away_team_score > toronto_score:
             print(f"Boxscore: TORONTO GOAL!\n")
-            post_to_webhook(1)
+            activate_goal_light(1)
             play_sound(SOUND_GOAL_HORN_FILE)
             toronto_score = away_team_score
         if home_team_score > opponent_score:
@@ -323,7 +324,7 @@ def play_sound(sound_file):
     sonos.play_uri(MP3_FILE_URL)
 
     # Check the state of the player
-    time.sleep(2)  # Give some time for the Sonos speaker to start playing
+    time.sleep(1)  # Give some time for the Sonos speaker to start playing
     current_track = sonos.get_current_track_info()
     state = sonos.get_current_transport_info()["current_transport_state"]
 
@@ -359,6 +360,7 @@ def goal_tracker_main():
 
     play_sound(SOUND_GAME_START_FILE)
     time.sleep(5)
+    activate_goal_light(1)
     play_sound(SOUND_GOAL_HORN_FILE)
     return # For now, just play the start sound and exit
 
