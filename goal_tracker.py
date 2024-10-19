@@ -119,7 +119,6 @@ def get_playbyplay_data(gameId):
     print(f"== Play by Play data: " + endpoint + f" {datetime.now()}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
-        #print(data, "\n")
 
         home_team = data.get('homeTeam', {})
         away_team = data.get('awayTeam', {})
@@ -307,7 +306,7 @@ def start_game():
 
 
 #
-# Play the goal horn sound
+# Play sounds on a Sonos speaker
 #
 def play_sound(sound_file):
     sonos = soco.SoCo(SONOS_IP)
