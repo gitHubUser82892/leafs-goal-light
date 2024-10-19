@@ -41,7 +41,6 @@ SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
-# MP3_FILE_URL = "http://192.168.86.61:5000/files/leafs_goal_horn.mp3"
 
 
 #
@@ -359,6 +358,11 @@ def goal_tracker_main():
     global toronto_is_home 
     global game_today
 
+    game_is_live = False
+    game_about_to_start = False
+    toronto_is_home = False
+    game_today = False 
+
     debug_mode = False
     if (debug_mode == True):
         print(f"Debug mode is on\n")
@@ -367,11 +371,6 @@ def goal_tracker_main():
         activate_goal_light(1)
         play_sound(SOUND_GOAL_HORN_FILE)
         return # For now, just play the start sound and exit
-
-    game_is_live = False
-    game_about_to_start = False
-    toronto_is_home = False
-    game_today = False 
 
     while (True):  # Keep checking for games
      
