@@ -1,0 +1,6 @@
+/usr/bin/python3: can't open file '/home/rmayor/Projects/leafs_goal_light/leafs_goal_light.py': [Errno 2] No such file or directory
+/usr/bin/python3: can't open file '/home/rmayor/Projects/leafs_goal_light/leafs_goal_light.py': [Errno 2] No such file or directory
+Traceback (most recent call last):
+  File "/home/rmayor/Projects/leafs_goal_light/goal_tracker.py", line 24, in <module>
+    import soco
+ModuleNotFoundError: No module named 'soco'
