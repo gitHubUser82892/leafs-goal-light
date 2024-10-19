@@ -397,7 +397,7 @@ def goal_tracker_main():
         print(f"No active game\n")
 
         if (game_about_to_start == True):
-            time.sleep(30)  # Check every 30 seconds if the game is about to start
+            time.sleep(20)  # Check every 20 seconds if the game is about to start
         else: 
             time.sleep(5*60)  # 5 minute delay before checking 
     
