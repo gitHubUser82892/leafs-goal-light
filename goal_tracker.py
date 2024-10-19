@@ -24,6 +24,7 @@ import time
 import json
 import pytz
 import sys
+import soco
 from datetime import datetime
 
 # Global variables
@@ -35,11 +36,15 @@ toronto_score = 0
 opponent_score = 0
 game_today = False
 
-SONOS_IP = "192.168.86.250"  #  Office:1 Sonos speaker
+SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
+
+
+MP3_FILE_URL = "http://192.168.86.61:5000/files/leafs_goal_horn.mp3"
+
 
 #
 # Home Assistant Webook URL with private key
@@ -307,35 +312,41 @@ def start_game():
 #
 # Play the goal horn sound
 #
-# TODO: How do I set the volume?
 def play_sound(sound_file):
-    # Prepare the HTTP request
-    url = f"http://{SONOS_IP}:1400/MediaRenderer/AVTransport/Control"
-    
-    headers = {
-        "Content-Type": "audio/mpeg",  # Change to audio/mpeg for MP3
-        "SOAPACTION": '"urn:schemas-upnp-org:service:AVTransport:1#SetAVTransportURI"',
-    }
-    
-    # The payload for the request
-    payload = f"""<?xml version="1.0" encoding="utf-8"?>
-    <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
-                 s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
-        <s:Body>
-            <SetAVTransportURI xmlns="urn:schemas-upnp-org:service:AVTransport:1">
-                <InstanceID>0</InstanceID>
-                <CurrentURI>http://{RASPPI_IP}{sound_file}</CurrentURI>  # Update to use MP3_FILE
-                <CurrentURIMetaData></CurrentURIMetaData>
-            </SetAVTransportURI>
-        </s:Body>
-    </s:Envelope>"""
+    sonos = soco.SoCo(SONOS_IP)
 
-    # Send the request to the Sonos speaker
-    response = requests.post(url, headers=headers, data=payload)
-    if response.status_code == 200:
-        print("Audio sent to Sonos speaker.")
+    # Display basic info about the speaker
+    print(f"Connected to Sonos Speaker: {sonos.player_name}")
+    print(f"Current Volume: {sonos.volume}")
+    original_volume = sonos.volume
+    sonos.volume = 50
+
+    # Play the MP3 file
+    print(f"Attempting to play: {MP3_FILE_URL}")
+    sonos.play_uri(MP3_FILE_URL)
+
+    # Check the state of the player
+    time.sleep(2)  # Give some time for the Sonos speaker to start playing
+    current_track = sonos.get_current_track_info()
+    state = sonos.get_current_transport_info()["current_transport_state"]
+
+    print(f"Track Info: {current_track}")
+    print(f"Current State: {state}")
+
+    # Volume control for debugging
+    if state == "PLAYING":
+        print("Playback started successfully.")
     else:
-        print("Error:", response.text)
+        print(f"Playback did not start. Current state: {state}")
+
+    # Check the playback position every few seconds
+    for i in range(5):
+        track_position = sonos.get_current_track_info()['position']
+        print(f"Track Position after {i+1} seconds: {track_position}")
+        time.sleep(1)
+
+    sonos.volume = original_volume
+
 
 
 
@@ -350,6 +361,9 @@ def goal_tracker_main():
     global game_about_to_start
     global toronto_is_home 
     global game_today
+
+    play_sound(SOUND_GAME_START_FILE)
+    return # For now, just play the start sound and exit
 
     game_is_live = False
     game_about_to_start = False
