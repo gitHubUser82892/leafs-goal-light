@@ -1,0 +1,15 @@
+name: Call Webhook on Commit
+
+on:
+  push:
+    branches:
+      - '**'  # Trigger on all branches
+
+jobs:
+  call-webhook:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Webhook
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d '{"text": "New commit pushed to the repository."}' http://192.168.86.61:5000/webhook/gitcommit
