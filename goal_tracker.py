@@ -7,7 +7,6 @@
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
 # TODO
-#    - Get the sound working through this script
 #    - Test both the start and goal sounds
 #    - Play to the right speaker
 #    - Move the webhook_listener into github
