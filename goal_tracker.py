@@ -8,7 +8,6 @@
 #
 # TODO
 #    - Get the sound working through this script
-#    - Set the sound volume
 #    - Test both the start and goal sounds
 #    - Play to the right speaker
 #    - Move the webhook_listener into github
@@ -317,7 +316,7 @@ def play_sound(sound_file):
     print(f"Connected to Sonos Speaker: {sonos.player_name}")
     print(f"Current Volume: {sonos.volume}")
     original_volume = sonos.volume
-    sonos.volume = 50
+    sonos.volume = 30
 
     # Play the MP3 file
     MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
@@ -362,6 +361,8 @@ def goal_tracker_main():
     global game_today
 
     play_sound(SOUND_GAME_START_FILE)
+    sleep(5)
+    play_sound(SOUND_GOAL_HORN_FILE)
     return # For now, just play the start sound and exit
 
     game_is_live = False
