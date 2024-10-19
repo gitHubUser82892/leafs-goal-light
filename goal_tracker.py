@@ -349,8 +349,6 @@ def play_sound(sound_file):
 
 
 
-
-
 #
 # Main function
 #
