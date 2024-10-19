@@ -358,7 +358,7 @@ def goal_tracker_main():
     global game_today
 
     play_sound(SOUND_GAME_START_FILE)
-    sleep(5)
+    time.sleep(5)
     play_sound(SOUND_GOAL_HORN_FILE)
     return # For now, just play the start sound and exit
 
