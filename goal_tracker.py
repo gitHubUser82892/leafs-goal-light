@@ -41,9 +41,7 @@ SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
-
-
-MP3_FILE_URL = "http://192.168.86.61:5000/files/leafs_goal_horn.mp3"
+# MP3_FILE_URL = "http://192.168.86.61:5000/files/leafs_goal_horn.mp3"
 
 
 #
@@ -322,6 +320,7 @@ def play_sound(sound_file):
     sonos.volume = 50
 
     # Play the MP3 file
+    MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
     print(f"Attempting to play: {MP3_FILE_URL}")
     sonos.play_uri(MP3_FILE_URL)
 
