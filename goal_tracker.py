@@ -203,7 +203,7 @@ def current_toronto_game():
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif (start_time - current_time) < 0:
+                        elif (start_time - current_time).total_seconds() < 0:
                             print(f"Toronto played earlier today")
                             game_today = False
                             game_is_live = False
