@@ -149,6 +149,7 @@ def current_toronto_game():
     global toronto_is_home
     global game_today
     global game_about_to_start
+    toronto_team_id = 30  # Toronto is team id 10
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -164,7 +165,7 @@ def current_toronto_game():
                     away_team_id = game.get('awayTeam', {}).get('id')
                     home_team_id = game.get('homeTeam', {}).get('id')
                 
-                    if away_team_id == 10 or home_team_id == 10:  # Toronto is team id 10
+                    if away_team_id == toronto_team_id or home_team_id == toronto_team_id: 
                         game_today = True
 
                         # Toronto is playing today.  Get the gameId and start time
