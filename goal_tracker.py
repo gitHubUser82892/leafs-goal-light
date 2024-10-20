@@ -203,7 +203,7 @@ def current_toronto_game():
                                         toronto_is_home = False
                             return gameId
                         elif (time_delta < timedelta(minutes=5)) and (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
-                            print(f"Game is about to start!")
+                            print(f"Game is about to start!  Starting in {time_delta}")
                             game_about_to_start = True
                             return gameId
                         elif (time_delta < timedelta(0) and gameState == 'OFF'):  # If the game already happened today
@@ -398,7 +398,7 @@ def goal_tracker_main():
                     check_scores(boxscore_data)  # Check the scores for new goals
                     time.sleep(12) # Check scores every 12 seconds
         
-        print(f"No active game\n")
+        print(f"No active game.  Waiting 5 minutes...\n")
 
         if (game_about_to_start == True):
             time.sleep(20)  # Check every 20 seconds if the game is about to start
@@ -425,8 +425,9 @@ if __name__ == "__main__":
     # Reconfigure stderr for immediate flushing
     sys.stderr.reconfigure(line_buffering=True)
 
-    print(f"***************************************************************************")
-    print(f"*\n* Starting goal tracker at {datetime.now()}\n*\n")
+    print(f"***************************************************************************************")
+    print(f"*\n* Starting goal tracker at {datetime.now()}\n*")
+    print(f"***************************************************************************************\n")
 
     goal_tracker_main()
 
