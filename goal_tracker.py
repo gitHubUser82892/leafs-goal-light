@@ -150,7 +150,7 @@ def current_toronto_game():
     global toronto_is_home
     global game_today
     global game_about_to_start
-    toronto_team_id = 30  # Toronto is team id 10
+    toronto_team_id = 5  # Toronto is team id 10
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
