@@ -202,11 +202,11 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif (time_delta < timedelta(minutes=5)) & (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
+                        elif (time_delta < timedelta(minutes=5)) and (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif (time_delta < timedelta(0) & gameState == 'OFF'):  # If the game already happened today
+                        elif (time_delta < timedelta(0) and gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
                             game_today = False   # Don't check again until tomorrow
                             game_is_live = False
@@ -426,7 +426,7 @@ if __name__ == "__main__":
     sys.stderr.reconfigure(line_buffering=True)
 
     print(f"***************************************************************************")
-    print(f"*\n* Starting goal tracker at 1218 {datetime.now()}\n*\n")
+    print(f"*\n* Starting goal tracker at {datetime.now()}\n*\n")
 
     goal_tracker_main()
 
