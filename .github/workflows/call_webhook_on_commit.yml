@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Call Webhook
         run: |
-          curl -X POST -H "Content-Type: application/json" -d '{"text": "New commit pushed to the repository."}' http://192.168.86.61:5000/webhook/gitcommit
+          curl -X POST -H "Content-Type: application/json" -d '{"text": "New commit pushed to the repository."}' https://zt89nxrf4qez00ejb4ckhitsk66t5nmg.ui.nabu.casa/api/webhook/pull-down-new-goal-tracker-repo-UomEW2ZQkJ65yNJzao6VCF99

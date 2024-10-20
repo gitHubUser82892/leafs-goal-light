@@ -197,11 +197,11 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif ((start_time - current_time).total_seconds() < 300) & ((start_time - current_time).total_seconds() > 0):  # If it's not started, but it will within 5 minutes
+                        elif ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() < 300) & ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() > 0):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif ((start_time - current_time).total_seconds() < 0 & False):
+                        elif ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() < 0 & False):
                             print(f"Toronto played earlier today")
                             game_today = False
                             game_is_live = False
@@ -377,10 +377,6 @@ def goal_tracker_main():
         # Makes a call to the NHL API to get the game schedule.  
         # Should run this only a few times a day, and then start calling boxscore within 5 minutes of start time
         gameId = current_toronto_game()
-
-        game_today = True
-        game_is_live = True
-        
 
         # Use this for debugging to force a specific game to be found
         #gameId = "2024010006"
