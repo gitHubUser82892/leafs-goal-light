@@ -24,6 +24,7 @@ import pytz
 import sys
 import soco
 from datetime import datetime
+from datetime import timedelta
 
 # Global variables
 game_is_live = False
@@ -175,8 +176,12 @@ def current_toronto_game():
                         # Parse startTimeUTC to datetime object
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
                         current_time = datetime.now(pytz.timezone('US/Eastern')).replace(tzinfo=pytz.timezone('US/Eastern'))
+                        time_delta = start_time - current_time
                         
-                        print(f"Toronto is playing today with gameId: {gameId} starting at {start_time}")
+                        print(f"Toronto is playing today with gameId: {gameId}")
+                        print(f"Start time:   {start_time}")
+                        print(f"Current time: {current_time}")
+                        print(f"Delta time:   {time_delta}")
 
                         # convert away_team_id to the name of the team
                         # in the json, this is awayTeam.placeName.default
@@ -185,7 +190,6 @@ def current_toronto_game():
                             print(f"Toronto is the home team and playing against {opponent_team_name}")
                         else:
                             print(f"Toronto is the away team and playing against {opponent_team_name}")
-
 
                         # Check if the game is live or about to start or will be later in the day
                         gameState = game.get('gameState')
@@ -198,11 +202,11 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() < 300) & ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() > 0):  # If it's not started, but it will within 5 minutes
+                        elif (time_delta < 300) & (time_delta > 0):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif ((start_time.total_seconds() - current_time.total_seconds()).total_seconds() < 0 & False):
+                        elif (time_delta < 0):  # If the game already started today
                             print(f"Toronto played earlier today")
                             game_today = False
                             game_is_live = False
