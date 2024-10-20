@@ -171,17 +171,7 @@ def current_toronto_game():
 
                         # Toronto is playing today.  Get the gameId and start time
                         gameId = (game.get('id'))
-                        startTimeUTC = game.get('startTimeUTC')
-
-                        # Parse startTimeUTC to datetime object
-                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
-                        current_time = datetime.now(pytz.timezone('US/Eastern')).replace(tzinfo=pytz.timezone('US/Eastern'))
-                        time_delta = start_time - current_time
-                        
                         print(f"Toronto is playing today with gameId: {gameId}")
-                        print(f"Start time:   {start_time}")
-                        print(f"Current time: {current_time}")
-                        print(f"Delta time:   {time_delta}")
 
                         # convert away_team_id to the name of the team
                         # in the json, this is awayTeam.placeName.default
@@ -190,6 +180,16 @@ def current_toronto_game():
                             print(f"Toronto is the home team and playing against {opponent_team_name}")
                         else:
                             print(f"Toronto is the away team and playing against {opponent_team_name}")
+
+                        # Calculations on the start time and delta from the current time
+                        startTimeUTC = game.get('startTimeUTC')
+                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
+                        current_time = datetime.now(pytz.timezone('US/Eastern')).replace(tzinfo=pytz.timezone('US/Eastern'))
+                        time_delta = start_time - current_time
+                        
+                        print(f"Start time:   {start_time}")
+                        print(f"Current time: {current_time}")
+                        print(f"Delta time:   {time_delta}")
 
                         # Check if the game is live or about to start or will be later in the day
                         gameState = game.get('gameState')
@@ -206,14 +206,14 @@ def current_toronto_game():
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif (time_delta < timedelta(0)):  # If the game already started today
+                        elif (time_delta < timedelta(0) & gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
-                            game_today = False
+                            game_today = False   # Don't check again until tomorrow
                             game_is_live = False
                             game_about_to_start = False 
                             return None
                         else:  # If it's not live or about to start, then it's later in the day
-                            print(f"Game is starting at {start_time}")
+                            print(f"Game is starting later today {start_time}")
                             game_about_to_start = False
                             return None
 
