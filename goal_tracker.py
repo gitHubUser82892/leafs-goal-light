@@ -202,11 +202,11 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif (time_delta < 300) & (time_delta > 0):  # If it's not started, but it will within 5 minutes
+                        elif (time_delta < timedelta(minutes=5)) & (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!")
                             game_about_to_start = True
                             return gameId
-                        elif (time_delta < 0):  # If the game already started today
+                        elif (time_delta < timedelta(0)):  # If the game already started today
                             print(f"Toronto played earlier today")
                             game_today = False
                             game_is_live = False
