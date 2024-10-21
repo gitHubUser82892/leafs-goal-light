@@ -48,7 +48,8 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 # Home Assistant Webook URL with private key
 #
 # I'm ok with this being in the code, as it's a webhook that is only accessible from my local network
-HA_WEBHOOK_URL = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
+HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
+HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "https://homeassistant.local:8123/api/webhook/nhl_game_about_to_start-q2NblABPRjzDLhwSNeH2dlpD"
 
 
 #
@@ -205,6 +206,7 @@ def current_toronto_game():
                         elif (time_delta < timedelta(minutes=5)) and (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!  Starting in {time_delta}")
                             game_about_to_start = True
+                            notify_game_about_to_start()
                             return gameId
                         elif (time_delta < timedelta(0) and gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
@@ -238,12 +240,12 @@ def current_toronto_game():
     
 
 #
-# POST to webhook to drive the HomeAssistant automation
+# POST to webhook to drive the HomeAssistant automation to turn on goal light
 #
 def activate_goal_light(message):
     payload = {"text": message}
     try:
-        response = requests.post(HA_WEBHOOK_URL, json=payload)
+        response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
         if response.status_code == 200:
             print("Successfully sent POST request to webhook")
         else:
@@ -251,6 +253,20 @@ def activate_goal_light(message):
     except Exception as e:
         print(f"Error sending POST request to webhook: {e}")
 
+
+#
+# POST to webhook to drive the HomeAssistant automation to send notification that the game is about to start
+#
+def notify_game_about_to_start(message):
+    payload = {"text": message}
+    try:
+        response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
+        if response.status_code == 200:
+            print("Successfully sent POST request to webhook")
+        else:
+            print(f"Failed to send POST request to webhook: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending POST request to webhook: {e}")
 
 
 #
