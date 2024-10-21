@@ -203,7 +203,7 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                         elif (time_delta < timedelta(hours=1) and gameState == 'OFF'):  # If the game already happened today
+                        elif (time_delta < timedelta(hours=1) and gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
                             game_today = False   # Don't check again until tomorrow
                             game_is_live = False
