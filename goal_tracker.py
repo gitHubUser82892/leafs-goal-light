@@ -184,7 +184,7 @@ def current_toronto_game():
                         # Calculations on the start time and delta from the current time
                         startTimeUTC = game.get('startTimeUTC')
                         start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
-                        current_time = datetime.now(pytz.timezone('US/Eastern')).replace(tzinfo=pytz.timezone('US/Eastern'))
+                        current_time = datetime.now(pytz.timezone('US/Eastern'))
                         time_delta = start_time - current_time
                         
                         print(f"Start time:   {start_time}")
