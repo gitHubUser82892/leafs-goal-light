@@ -206,7 +206,7 @@ def current_toronto_game():
                         elif (time_delta < timedelta(minutes=5)) and (time_delta > timedelta(0)):  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!  Starting in {time_delta}")
                             game_about_to_start = True
-                            notify_game_about_to_start()
+                            notify_game_about_to_start(1)
                             return gameId
                         elif (time_delta < timedelta(0) and gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
