@@ -49,7 +49,7 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 #
 # I'm ok with this being in the code, as it's a webhook that is only accessible from my local network
 HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
-HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "https://homeassistant.local:8123/api/webhook/nhl_game_about_to_start-q2NblABPRjzDLhwSNeH2dlpD"
+HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "http://homeassistant.local:8123/api/webhook/nhl_game_about_to_start-q2NblABPRjzDLhwSNeH2dlpD"
 
 
 #
