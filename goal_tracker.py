@@ -15,6 +15,50 @@
 #    - To use new sound files:  ffmpeg -i file.wav file.mp3
 #    - webhook_listener running as systemd service
 # #
+# #
+"""
+Goal Tracker for Toronto Maple Leafs
+This script tracks the Toronto Maple Leafs' games using the NHL API and triggers actions such as playing sounds on a Sonos speaker and activating a goal light via Home Assistant webhooks.
+Modules:
+    - requests: For making HTTP requests to the NHL API and Home Assistant webhooks.
+    - time: For adding delays between API calls.
+    - json: For parsing JSON responses from the NHL API.
+    - pytz: For timezone conversions.
+    - sys: For redirecting stdout and stderr to a log file.
+    - soco: For controlling Sonos speakers.
+    - datetime: For handling date and time operations.
+Constants:
+    - TORONTO_TEAM_ID: The team ID for the Toronto Maple Leafs.
+    - HTTP_STATUS_OK: HTTP status code for a successful request.
+    - TIMEZONE: The timezone for the game times.
+    - SONOS_IP: The IP address of the Sonos speaker.
+    - RASPPI_IP: The IP address of the Raspberry Pi running the webserver.
+    - SOUND_GAME_START_FILE: The file path for the game start sound.
+    - SOUND_GOAL_HORN_FILE: The file path for the goal horn sound.
+Global Variables:
+    - game_is_live: Boolean indicating if a game is currently live.
+    - game_about_to_start: Boolean indicating if a game is about to start.
+    - game_in_intermission: Boolean indicating if a game is in intermission.
+    - toronto_is_home: Boolean indicating if Toronto is the home team.
+    - toronto_score: The current score of the Toronto Maple Leafs.
+    - opponent_score: The current score of the opponent team.
+    - game_today: Boolean indicating if there is a game today.
+Functions:
+    - get_opponent_team_name(game, home_team_id): Returns the name of the opponent team.
+    - get_apiweb_nhl_data(endpoint): Makes a GET request to the NHL API and returns the JSON response.
+    - get_boxscore_data(gameId): Retrieves and parses the boxscore data for a given game ID.
+    - get_playbyplay_data(gameId): Retrieves and parses the play-by-play data for a given game ID.
+    - current_toronto_game(): Determines if Toronto is playing today and returns the game ID if applicable.
+    - activate_goal_light(message): Sends a POST request to the Home Assistant webhook to activate the goal light.
+    - notify_game_about_to_start(message): Sends a POST request to the Home Assistant webhook to notify that the game is about to start.
+    - check_scores(boxscore_data): Checks the current scores and triggers actions if there has been a recent goal.
+    - start_game(): Resets the scores and sets the game as live when it starts.
+    - play_sound(sound_file): Plays a sound on the Sonos speaker.
+    - goal_tracker_main(): The main function that runs the goal tracker.
+Usage:
+    Run the script to start tracking the Toronto Maple Leafs' games. The script will log its output to a specified log file and continuously check for game updates.
+"""
+
 
 
 import requests
@@ -31,6 +75,14 @@ TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 
+#SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
+#SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
+SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
+
+RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
+SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
+SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
+
 # Global variables
 game_is_live = False
 game_about_to_start = False
@@ -40,13 +92,16 @@ toronto_score = 0
 opponent_score = 0
 game_today = False
 
-#SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
-#SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
-SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
 
-RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
-SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
-SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
+
+#
+# Return the name of the opponent team
+#
+def get_opponent_team_name(game, home_team_id):
+    if home_team_id == TORONTO_TEAM_ID:
+        return game.get('awayTeam', {}).get('placeName', {}).get('default')
+    else:
+        return game.get('homeTeam', {}).get('placeName', {}).get('default')
 
 
 #
@@ -178,15 +233,14 @@ def current_toronto_game():
                         gameId = (game.get('id'))
                         print(f"Toronto is playing today with gameId: {gameId}")
 
-                        # convert away_team_id to the name of the team
-                        # in the json, this is awayTeam.placeName.default
-                        
+                        # Get the opponent team name
+                        opponent_team_name = get_opponent_team_name(game, home_team_id)
                         if home_team_id == TORONTO_TEAM_ID:  
-                            opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
                             print(f"Toronto is the home team and playing against {opponent_team_name}")
+                            toronto_is_home = True
                         else:
-                            opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                             print(f"Toronto is the away team and playing against {opponent_team_name}")
+                            toronto_is_home = False
 
                         # Calculations on the start time and delta from the current time
                         startTimeUTC = game.get('startTimeUTC')
@@ -204,10 +258,6 @@ def current_toronto_game():
                             print(f"Game is LIVE!")
                             if game_is_live == False:  # If the game wasn't already live, then set it as started
                                     start_game()
-                                    if home_team_id == TORONTO_TEAM_ID:
-                                        toronto_is_home = True
-                                    else:
-                                        toronto_is_home = False
                             return gameId
                         elif (gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
