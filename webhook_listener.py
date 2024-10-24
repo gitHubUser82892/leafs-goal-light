@@ -92,7 +92,7 @@ def serve_horn_mp3():
 def lightandsound():
     print(f"Manually playing the light and sound")
     activate_goal_light(1)
-    play_sound("/files/leafs_game_start.mp3")
+    play_sound("/files/leafs_goal_horn.mp3")
     return "Success", 200
 
 
