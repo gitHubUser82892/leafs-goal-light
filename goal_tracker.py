@@ -118,12 +118,15 @@ HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "http://homeassistant.local:8123/api
 def get_apiweb_nhl_data(endpoint):
     base_url = "https://api-web.nhle.com/"
     url = f"{base_url}{endpoint}"
-    response = requests.get(url)
-    
-    if response.status_code == HTTP_STATUS_OK:
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
         return response.json()
-    else:
-        print(f"Failed to retrieve data from NHL API: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to retrieve data from NHL API: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse JSON response: {e}")
         return None
 
 
@@ -257,7 +260,7 @@ def current_toronto_game():
                         if gameState == 'LIVE':  # Check if the game is live
                             print(f"Game is LIVE!")
                             if game_is_live == False:  # If the game wasn't already live, then set it as started
-                                    start_game()
+                                start_game()
                             return gameId
                         elif (gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
@@ -302,12 +305,10 @@ def activate_goal_light(message):
     payload = {"text": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
-        if response.status_code == HTTP_STATUS_OK:
-            print("Successfully sent POST request to webhook")
-        else:
-            print(f"Failed to send POST request to webhook: {response.status_code}")
-    except Exception as e:
-        print(f"Error sending POST request to webhook: {e}")
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        print("Successfully sent POST request to webhook")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send POST request to webhook: {e}")
 
 
 #
@@ -317,12 +318,10 @@ def notify_game_about_to_start(message):
     payload = {"message": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
-        if response.status_code == HTTP_STATUS_OK:
-            print("Successfully sent POST request to webhook")
-        else:
-            print(f"Failed to send POST request to webhook: {response.status_code}")
-    except Exception as e:
-        print(f"Error sending POST request to webhook: {e}")
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        print("Successfully sent POST request to webhook")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send POST request to webhook: {e}")
 
 
 #
@@ -335,31 +334,36 @@ def check_scores(boxscore_data):
     home_team_score = 0
     away_team_score = 0
 
-    # check the boxscore data
-    home_team = boxscore_data.get('homeTeam', {})
-    away_team = boxscore_data.get('awayTeam', {})
+    try:
+        # check the boxscore data
+        home_team = boxscore_data.get('homeTeam', {})
+        away_team = boxscore_data.get('awayTeam', {})
 
-    home_team_score = home_team.get('score')
-    away_team_score = away_team.get('score')
+        home_team_score = home_team.get('score')
+        away_team_score = away_team.get('score')
 
-    if toronto_is_home == True:
-        if home_team_score > toronto_score:
-            print(f"Boxscore: TORONTO GOAL!\n")
-            toronto_score = home_team_score
-            activate_goal_light(1)
-            play_sound(SOUND_GOAL_HORN_FILE)
-        if away_team_score > opponent_score:
-            print(f"Boxscore: OPPONENT GOAL\n")
-            opponent_score = away_team_score
-    else:
-        if away_team_score > toronto_score:
-            print(f"Boxscore: TORONTO GOAL!\n")
-            activate_goal_light(1)
-            play_sound(SOUND_GOAL_HORN_FILE)
-            toronto_score = away_team_score
-        if home_team_score > opponent_score:
-            print(f"Boxscore: OPPONENT GOAL\n")
-            opponent_score = home_team_score
+        if toronto_is_home:
+            if home_team_score > toronto_score:
+                print(f"Boxscore: TORONTO GOAL!\n")
+                toronto_score = home_team_score
+                activate_goal_light("TORONTO GOAL!")
+                play_sound(SOUND_GOAL_HORN_FILE)
+            if away_team_score > opponent_score:
+                print(f"Boxscore: OPPONENT GOAL\n")
+                opponent_score = away_team_score
+        else:
+            if away_team_score > toronto_score:
+                print(f"Boxscore: TORONTO GOAL!\n")
+                toronto_score = away_team_score
+                activate_goal_light("TORONTO GOAL!")
+                play_sound(SOUND_GOAL_HORN_FILE)
+            if home_team_score > opponent_score:
+                print(f"Boxscore: OPPONENT GOAL\n")
+                opponent_score = home_team_score
+    except KeyError as e:
+        print(f"Key error while checking scores: {e}")
+    except Exception as e:
+        print(f"Unexpected error while checking scores: {e}")
 
     return
 
@@ -378,6 +382,7 @@ def start_game():
     toronto_score = 0
     opponent_score = 0
 
+    print(f"Game has started!\n")
     play_sound(SOUND_GAME_START_FILE)
 
 
@@ -386,40 +391,46 @@ def start_game():
 # Play sounds on a Sonos speaker
 #
 def play_sound(sound_file):
-    sonos = soco.SoCo(SONOS_IP)
+    try:
+        sonos = soco.SoCo(SONOS_IP)
 
-    # Display basic info about the speaker
-    print(f"Connected to Sonos Speaker: {sonos.player_name}")
-    print(f"Current Volume: {sonos.volume}")
-    original_volume = sonos.volume
-    sonos.volume = 55
+        # Display basic info about the speaker
+        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+        print(f"Current Volume: {sonos.volume}")
+        original_volume = sonos.volume
+        sonos.volume = 55
 
-    # Play the MP3 file
-    MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
-    print(f"Attempting to play: {MP3_FILE_URL}")
-    sonos.play_uri(MP3_FILE_URL)
+        # Play the MP3 file
+        MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
+        print(f"Attempting to play: {MP3_FILE_URL}")
+        sonos.play_uri(MP3_FILE_URL)
 
-    # Check the state of the player
-    time.sleep(1)  # Give some time for the Sonos speaker to start playing
-    current_track = sonos.get_current_track_info()
-    state = sonos.get_current_transport_info()["current_transport_state"]
+        # Check the state of the player
+        time.sleep(1)  # Give some time for the Sonos speaker to start playing
+        current_track = sonos.get_current_track_info()
+        state = sonos.get_current_transport_info()["current_transport_state"]
 
-    print(f"Track Info: {current_track}")
-    print(f"Current State: {state}")
+        print(f"Track Info: {current_track}")
+        print(f"Current State: {state}")
 
-    # Volume control for debugging
-    if state == "PLAYING":
-        print("Playback started successfully.")
-    else:
-        print(f"Playback did not start. Current state: {state}")
+        # Volume control for debugging
+        if state == "PLAYING":
+            print("Playback started successfully.")
+        else:
+            print(f"Playback did not start. Current state: {state}")
 
-    # Check the playback position every few seconds
-    for i in range(5):
-        track_position = sonos.get_current_track_info()['position']
-        print(f"Track Position after {i+1} seconds: {track_position}")
-        time.sleep(1)
+        # Check the playback position every few seconds
+        for i in range(5):
+            track_position = sonos.get_current_track_info()['position']
+            print(f"Track Position after {i+1} seconds: {track_position}")
+            time.sleep(1)
 
-    sonos.volume = original_volume
+        sonos.volume = original_volume
+
+    except soco.exceptions.SoCoException as e:
+        print(f"Sonos error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
 
 
 
