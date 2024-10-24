@@ -1,3 +1,12 @@
+#  This is a simple Flask application that listens for webhook notifications
+#  - serves up the files to play the sounds to the sonos speaker
+#  - restart the goal_tracker.py application when a commit is made to the git repo
+#
+#  The application listens on port 5000 and has the following routes:
+#  - /webhook/gitcommit: Listens for POST requests from the webhook
+#  - /files/leafs_game_start.mp3: Serves the game start sound
+#  - /files/leafs_goal_horn.mp3: Serves the goal sound
+#
 #
 #  sudo systemctl restart webhook_listener.service
 #  sudo systemctl status webhook_listener.service
@@ -33,7 +42,7 @@ MP3_DIR = "/home/rmayor/Projects/leafs_goal_light"
 
 
 #
-#  The route for the game start sound
+#  The route for the game start sound file
 #
 @app.route('/files/leafs_game_start.mp3')
 def serve_start_mp3():
@@ -54,7 +63,7 @@ def serve_start_mp3():
 
 
 #
-# The route for the goal sound
+# The route for the goal sound file
 #
 @app.route('/files/leafs_goal_horn.mp3')
 def serve_horn_mp3():
@@ -73,6 +82,18 @@ def serve_horn_mp3():
     except Exception as e:
        print(f"Error sending mp3 file: {e}")
        return "Error serving file", 500
+
+
+#
+# The route to manually invoke the light and sound
+#
+@app.route('/webhook/lightandsound', methods=['POST'])
+def lightandsound():
+    print(f"Manually playing the light and sound")
+    activate_goal_light(1)
+    play_sound("/files/leafs_game_start.mp3")
+    return "Success", 200
+
 
 
 #
