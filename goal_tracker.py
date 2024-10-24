@@ -86,7 +86,6 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 # Global variables
 game_is_live = False
 game_about_to_start = False
-game_in_intermission = False
 toronto_is_home = False
 toronto_score = 0
 opponent_score = 0
@@ -125,7 +124,6 @@ def get_apiweb_nhl_data(endpoint):
 #
 def get_boxscore_data(gameId):
     global game_is_live
-    global game_in_intermission
     
     endpoint = "v1/gamecenter/" + str(gameId) + "/boxscore"
     print(f"== Boxscore data: " + endpoint + f" {datetime.now()}")
@@ -429,10 +427,9 @@ def goal_tracker_main():
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         while (game_is_live == True):
-                    boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
-                    # playbyplay_data = get_playbyplay_data(gameId)   # Not using this now, as boxscore seems to be just as up to date
-                    check_scores(boxscore_data)  # Check the scores for new goals
-                    time.sleep(10) # Check scores every 12 seconds
+            boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
+            check_scores(boxscore_data)  # Check the scores for new goals
+            time.sleep(10) # Check scores every 12 seconds
         
         print(f"No active game.  Waiting 5 minutes...\n")
 
