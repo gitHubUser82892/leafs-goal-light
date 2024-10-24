@@ -154,7 +154,7 @@ def get_boxscore_data(gameId):
             if toronto_is_home == True:
                 print(f"Away Team (Opponent) Score: {away_team_score}")
             else:
-                print(f"Home Team (Toronto) Score: {away_team_score}")
+                print(f"Away Team (Toronto) Score: {away_team_score}")
         else:
             print("Away Team Score not found")
         print("\n")
@@ -198,8 +198,10 @@ def current_toronto_game():
                             # Get the opponent team name
                             if home_team_id == TORONTO_TEAM_ID:  
                                 opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                                toronto_is_home = True
                                 print(f"Toronto is the home team and playing against {opponent_team_name}")
                             else:
+                                toronto_is_home = False
                                 opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                                 print(f"Toronto is the away team and playing against {opponent_team_name}")
 
