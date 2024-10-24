@@ -95,16 +95,6 @@ game_today = False
 
 
 #
-# Return the name of the opponent team
-#
-def get_opponent_team_name(game, home_team_id):
-    if home_team_id == TORONTO_TEAM_ID:
-        return game.get('awayTeam', {}).get('placeName', {}).get('default')
-    else:
-        return game.get('homeTeam', {}).get('placeName', {}).get('default')
-
-
-#
 # Home Assistant Webook URL with private key
 #
 # I'm ok with this being in the code, as it's a webhook that is only accessible from my local network
@@ -243,13 +233,13 @@ def current_toronto_game():
                             print(f"Toronto is playing today with gameId: {gameId}")
 
                             # Get the opponent team name
-                            opponent_team_name = get_opponent_team_name(game, home_team_id)
                             if home_team_id == TORONTO_TEAM_ID:  
+                                opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
                                 print(f"Toronto is the home team and playing against {opponent_team_name}")
-                                toronto_is_home = True
                             else:
+                                opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                                 print(f"Toronto is the away team and playing against {opponent_team_name}")
-                                toronto_is_home = False
+
 
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
