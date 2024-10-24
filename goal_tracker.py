@@ -231,6 +231,8 @@ def current_toronto_game():
                                 game_about_to_start = True
                                 notify_game_about_to_start("Game about to start!")
                                 return gameId
+                            elif game_about_to_start:
+                                return gameId
                             else:  # If it's not live or about to start, then it's later in the day
                                 print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
@@ -431,11 +433,11 @@ def goal_tracker_main():
             check_scores(boxscore_data)  # Check the scores for new goals
             time.sleep(10) # Check scores every 12 seconds
         
-        print(f"No active game.  Waiting 5 minutes...\n")
-
         if (game_about_to_start == True):
+            print(f"Game about to start!  Waiting 20 seconds...\n")
             time.sleep(20)  # Check every 20 seconds if the game is about to start
         else: 
+            print(f"No active game.  Waiting 5 minutes...\n")
             time.sleep(5*60)  # 5 minute delay before checking 
     
 
