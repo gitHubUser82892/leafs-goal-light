@@ -184,26 +184,31 @@ def get_playbyplay_data(gameId):
     print(f"== Play by Play data: " + endpoint + f" {datetime.now()}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
+        try:
+            home_team = data.get('homeTeam', {})
+            away_team = data.get('awayTeam', {})
 
-        home_team = data.get('homeTeam', {})
-        away_team = data.get('awayTeam', {})
+            home_team_score = home_team.get('score')
+            away_team_score = away_team.get('score')
 
-        home_team_score = home_team.get('score')
-        away_team_score = away_team.get('score')
+            if home_team_score is not None:
+                print(f"Home Team Score: {home_team_score}")
+            else:
+                print("Home Team Score not found")
 
-        if home_team_score is not None:
-            print(f"Home Team Score: {home_team_score}")
-        else:
-            print("Home Team Score not found")
-
-        if away_team_score is not None:
-            print(f"Away Team Score: {away_team_score}")
-        else:
-            print("Away Team Score not found")
-        print("\n")
-        return data
+            if away_team_score is not None:
+                print(f"Away Team Score: {away_team_score}")
+            else:
+                print("Away Team Score not found")
+            print("\n")
+            return data
+        except KeyError as e:
+            print(f"Key error while parsing play-by-play data: {e}")
+        except Exception as e:
+            print(f"Unexpected error while parsing play-by-play data: {e}")
     else:
         print("Failed to retrieve data")
+    return None
 
 
 #
@@ -222,80 +227,74 @@ def current_toronto_game():
 
     data = get_apiweb_nhl_data(endpoint)
     if data:
-        for game_week in data.get('gameWeek', []):
-            game_date = game_week.get('date')
-            if game_date == today_date:
-                for game in game_week.get('games', []):
-                    away_team_id = game.get('awayTeam', {}).get('id')
-                    home_team_id = game.get('homeTeam', {}).get('id')
-                
-                    if away_team_id == TORONTO_TEAM_ID or home_team_id == TORONTO_TEAM_ID: 
-                        game_today = True
+        try:
+            for game_week in data.get('gameWeek', []):
+                game_date = game_week.get('date')
+                if game_date == today_date:
+                    for game in game_week.get('games', []):
+                        away_team_id = game.get('awayTeam', {}).get('id')
+                        home_team_id = game.get('homeTeam', {}).get('id')
+                    
+                        if away_team_id == TORONTO_TEAM_ID or home_team_id == TORONTO_TEAM_ID: 
+                            game_today = True
 
-                        # Toronto is playing today.  Get the gameId and start time
-                        gameId = (game.get('id'))
-                        print(f"Toronto is playing today with gameId: {gameId}")
+                            # Toronto is playing today.  Get the gameId and start time
+                            gameId = game.get('id')
+                            print(f"Toronto is playing today with gameId: {gameId}")
 
-                        # Get the opponent team name
-                        opponent_team_name = get_opponent_team_name(game, home_team_id)
-                        if home_team_id == TORONTO_TEAM_ID:  
-                            print(f"Toronto is the home team and playing against {opponent_team_name}")
-                            toronto_is_home = True
-                        else:
-                            print(f"Toronto is the away team and playing against {opponent_team_name}")
-                            toronto_is_home = False
+                            # Get the opponent team name
+                            opponent_team_name = get_opponent_team_name(game, home_team_id)
+                            if home_team_id == TORONTO_TEAM_ID:  
+                                print(f"Toronto is the home team and playing against {opponent_team_name}")
+                                toronto_is_home = True
+                            else:
+                                print(f"Toronto is the away team and playing against {opponent_team_name}")
+                                toronto_is_home = False
 
-                        # Calculations on the start time and delta from the current time
-                        startTimeUTC = game.get('startTimeUTC')
-                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
-                        current_time = datetime.now(pytz.timezone(TIMEZONE))
-                        time_delta = start_time - current_time
-                        
-                        print(f"Start time:   {start_time}")
-                        print(f"Current time: {current_time}")
-                        print(f"Delta time:   {time_delta}")
+                            # Calculations on the start time and delta from the current time
+                            startTimeUTC = game.get('startTimeUTC')
+                            start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
+                            current_time = datetime.now(pytz.timezone(TIMEZONE))
+                            time_delta = start_time - current_time
+                            
+                            print(f"Start time:   {start_time}")
+                            print(f"Current time: {current_time}")
+                            print(f"Delta time:   {time_delta}")
 
-                        # Check if the game is live or about to start or will be later in the day
-                        gameState = game.get('gameState')
-                        if gameState == 'LIVE':  # Check if the game is live
-                            print(f"Game is LIVE!")
-                            if game_is_live == False:  # If the game wasn't already live, then set it as started
-                                start_game()
-                            return gameId
-                        elif (gameState == 'OFF'):  # If the game already happened today
-                            print(f"Toronto played earlier today")
-                            game_today = False   # Don't check again until tomorrow
-                            game_is_live = False
-                            game_about_to_start = False 
-                            return None
-                        elif (time_delta < timedelta(minutes=5)) and game_about_to_start == False :  # If it's not started, but it will within 5 minutes
-                            print(f"Game is about to start!  Starting in {time_delta}")
-                            game_about_to_start = True
-                            notify_game_about_to_start("Game about to start!")
-                            return gameId
-                        else:  # If it's not live or about to start, then it's later in the day
-                            print(f"Game is starting later today {start_time}")
-                            game_about_to_start = False
-                            return None
-
-                # if we exit the for loop, then no Toronto games were found today
-                print(f"No Toronto games today")
-                game_is_live = False
-                game_today = False
-                game_about_to_start = False
-                return None
-            else:  # There are no games today at all
-                print(f"No games today")
-                game_is_live = False
-                game_today = False
-                game_about_to_start = False
-                return None
+                            # Check if the game is live or about to start or will be later in the day
+                            gameState = game.get('gameState')
+                            if gameState == 'LIVE':  # Check if the game is live
+                                print(f"Game is LIVE!")
+                                if not game_is_live:  # If the game wasn't already live, then set it as started
+                                    start_game()
+                                return gameId
+                            elif gameState == 'OFF':  # If the game already happened today
+                                print(f"Toronto played earlier today")
+                                game_today = False   # Don't check again until tomorrow
+                                game_is_live = False
+                                game_about_to_start = False 
+                                return None
+                            elif time_delta < timedelta(minutes=5) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
+                                print(f"Game is about to start!  Starting in {time_delta}")
+                                game_about_to_start = True
+                                notify_game_about_to_start("Game about to start!")
+                                return gameId
+                            else:  # If it's not live or about to start, then it's later in the day
+                                print(f"Game is starting later today {start_time}")
+                                game_about_to_start = False
+                                return None
+                    print(f"No Toronto games today")
+                    return None
+                else:
+                    print(f"No games today")
+                    return None
+        except KeyError as e:
+            print(f"Key error while parsing schedule data: {e}")
+        except Exception as e:
+            print(f"Unexpected error while parsing schedule data: {e}")
     else:
-         game_is_live = False
-         game_today = False
-         game_about_to_start = False
-         print("Failed to retrieve data")
-    return None                   
+        print("Failed to retrieve data")
+    return None
     
 
 #
