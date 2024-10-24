@@ -249,7 +249,7 @@ def current_toronto_game():
                             
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Delta time:   {time_delta.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"Delta time:   {str(time_delta).split('.')[0]}")
 
                             # Check if the game is live or about to start or will be later in the day
                             gameState = game.get('gameState')
@@ -265,7 +265,7 @@ def current_toronto_game():
                                 game_about_to_start = False 
                                 return None
                             elif time_delta < timedelta(minutes=5) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
-                                print(f"Game is about to start!  Starting in {time_delta.strftime('%Y-%m-%d %H:%M:%S')}")
+                                print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 game_about_to_start = True
                                 notify_game_about_to_start("Game about to start!")
                                 return gameId
