@@ -178,11 +178,11 @@ def current_toronto_game():
                         # in the json, this is awayTeam.placeName.default
                         
                         if home_team_id == toronto_team_id:  
-                            print(f"Toronto is the home team and playing against {opponent_team_name}")
                             opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                            print(f"Toronto is the home team and playing against {opponent_team_name}")
                         else:
-                            print(f"Toronto is the away team and playing against {opponent_team_name}")
                             opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
+                            print(f"Toronto is the away team and playing against {opponent_team_name}")
 
                         # Calculations on the start time and delta from the current time
                         startTimeUTC = game.get('startTimeUTC')
