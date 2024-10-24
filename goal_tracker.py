@@ -1,14 +1,14 @@
+# #
+# #
 #
 # Originally by:  gitHubUser82892 
-#
-# # These are the header comments.  
-# Change from external nabu casa to local so I don't reveal my external URL and webhook
 #
 # Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
 #
 # TODO
 #    - Test auto-crash recovery of the webhook_listener
 #    - fix the github commit listener in homeassistant
+#    - Use delta_time to figure out how long to sleep
 #
 #
 # Instructions
@@ -103,7 +103,7 @@ HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "http://homeassistant.local:8123/api
 
 
 #
-# This is the direct call to the NHL API
+# This is the direct call to the public NHL API
 #
 def get_apiweb_nhl_data(endpoint):
     base_url = "https://api-web.nhle.com/"
@@ -167,41 +167,6 @@ def get_boxscore_data(gameId):
 
 
 #
-# Main function to get the play by play data and determine the current score from the API
-#
-def get_playbyplay_data(gameId):
-    endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
-    print(f"== Play by Play data: " + endpoint + f" {datetime.now()}")
-    data = get_apiweb_nhl_data(endpoint)
-    if data:
-        try:
-            home_team = data.get('homeTeam', {})
-            away_team = data.get('awayTeam', {})
-
-            home_team_score = home_team.get('score')
-            away_team_score = away_team.get('score')
-
-            if home_team_score is not None:
-                print(f"Home Team Score: {home_team_score}")
-            else:
-                print("Home Team Score not found")
-
-            if away_team_score is not None:
-                print(f"Away Team Score: {away_team_score}")
-            else:
-                print("Away Team Score not found")
-            print("\n")
-            return data
-        except KeyError as e:
-            print(f"Key error while parsing play-by-play data: {e}")
-        except Exception as e:
-            print(f"Unexpected error while parsing play-by-play data: {e}")
-    else:
-        print("Failed to retrieve data")
-    return None
-
-
-#
 # Return the gameId if Toronto is playing now or determine if it's about to start
 #
 def current_toronto_game():
@@ -213,7 +178,7 @@ def current_toronto_game():
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
 
-    print(f"== Find next game: " + endpoint + f" {datetime.now()}\n")
+    print(f"== Find next game: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     data = get_apiweb_nhl_data(endpoint)
     if data:
@@ -239,7 +204,6 @@ def current_toronto_game():
                             else:
                                 opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                                 print(f"Toronto is the away team and playing against {opponent_team_name}")
-
 
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
@@ -468,7 +432,7 @@ def goal_tracker_main():
                     boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
                     # playbyplay_data = get_playbyplay_data(gameId)   # Not using this now, as boxscore seems to be just as up to date
                     check_scores(boxscore_data)  # Check the scores for new goals
-                    time.sleep(12) # Check scores every 12 seconds
+                    time.sleep(10) # Check scores every 12 seconds
         
         print(f"No active game.  Waiting 5 minutes...\n")
 
