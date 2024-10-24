@@ -244,12 +244,12 @@ def current_toronto_game():
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
                             start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
-                            current_time = datetime.now(pytz.timezone(TIMEZONE))
-                            time_delta = start_time - current_time
+                            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            time_delta = (start_time - current_time)
                             
-                            print(f"Start time:   {start_time}")
-                            print(f"Current time: {current_time}")
-                            print(f"Delta time:   {time_delta}")
+                            print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            print(f"Delta time:   {time_delta.strftime('%Y-%m-%d %H:%M:%S')}")
 
                             # Check if the game is live or about to start or will be later in the day
                             gameState = game.get('gameState')
@@ -265,12 +265,12 @@ def current_toronto_game():
                                 game_about_to_start = False 
                                 return None
                             elif time_delta < timedelta(minutes=5) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
-                                print(f"Game is about to start!  Starting in {time_delta}")
+                                print(f"Game is about to start!  Starting in {time_delta.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = True
                                 notify_game_about_to_start("Game about to start!")
                                 return gameId
                             else:  # If it's not live or about to start, then it's later in the day
-                                print(f"Game is starting later today {start_time}")
+                                print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 return None
                     print(f"No Toronto games today")
