@@ -26,6 +26,11 @@ import soco
 from datetime import datetime
 from datetime import timedelta
 
+# Constants
+TORONTO_TEAM_ID = 10
+HTTP_STATUS_OK = 200
+TIMEZONE = 'US/Eastern'
+
 # Global variables
 game_is_live = False
 game_about_to_start = False
@@ -60,7 +65,7 @@ def get_apiweb_nhl_data(endpoint):
     url = f"{base_url}{endpoint}"
     response = requests.get(url)
     
-    if response.status_code == 200:
+    if response.status_code == HTTP_STATUS_OK:
         return response.json()
     else:
         print(f"Failed to retrieve data from NHL API: {response.status_code}")
@@ -151,7 +156,6 @@ def current_toronto_game():
     global toronto_is_home
     global game_today
     global game_about_to_start
-    toronto_team_id = 10  # Toronto is team id 10
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -167,7 +171,7 @@ def current_toronto_game():
                     away_team_id = game.get('awayTeam', {}).get('id')
                     home_team_id = game.get('homeTeam', {}).get('id')
                 
-                    if away_team_id == toronto_team_id or home_team_id == toronto_team_id: 
+                    if away_team_id == TORONTO_TEAM_ID or home_team_id == TORONTO_TEAM_ID: 
                         game_today = True
 
                         # Toronto is playing today.  Get the gameId and start time
@@ -177,7 +181,7 @@ def current_toronto_game():
                         # convert away_team_id to the name of the team
                         # in the json, this is awayTeam.placeName.default
                         
-                        if home_team_id == toronto_team_id:  
+                        if home_team_id == TORONTO_TEAM_ID:  
                             opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
                             print(f"Toronto is the home team and playing against {opponent_team_name}")
                         else:
@@ -186,8 +190,8 @@ def current_toronto_game():
 
                         # Calculations on the start time and delta from the current time
                         startTimeUTC = game.get('startTimeUTC')
-                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone('US/Eastern'))
-                        current_time = datetime.now(pytz.timezone('US/Eastern'))
+                        start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
+                        current_time = datetime.now(pytz.timezone(TIMEZONE))
                         time_delta = start_time - current_time
                         
                         print(f"Start time:   {start_time}")
@@ -200,7 +204,7 @@ def current_toronto_game():
                             print(f"Game is LIVE!")
                             if game_is_live == False:  # If the game wasn't already live, then set it as started
                                     start_game()
-                                    if home_team_id == 10:
+                                    if home_team_id == TORONTO_TEAM_ID:
                                         toronto_is_home = True
                                     else:
                                         toronto_is_home = False
@@ -248,7 +252,7 @@ def activate_goal_light(message):
     payload = {"text": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
-        if response.status_code == 200:
+        if response.status_code == HTTP_STATUS_OK:
             print("Successfully sent POST request to webhook")
         else:
             print(f"Failed to send POST request to webhook: {response.status_code}")
@@ -263,7 +267,7 @@ def notify_game_about_to_start(message):
     payload = {"message": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
-        if response.status_code == 200:
+        if response.status_code == HTTP_STATUS_OK:
             print("Successfully sent POST request to webhook")
         else:
             print(f"Failed to send POST request to webhook: {response.status_code}")
