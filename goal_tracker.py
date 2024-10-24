@@ -176,11 +176,13 @@ def current_toronto_game():
 
                         # convert away_team_id to the name of the team
                         # in the json, this is awayTeam.placeName.default
-                        opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
-                        if home_team_id == 10:  
+                        
+                        if home_team_id == toronto_team_id:  
                             print(f"Toronto is the home team and playing against {opponent_team_name}")
+                            opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
                         else:
                             print(f"Toronto is the away team and playing against {opponent_team_name}")
+                            opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
 
                         # Calculations on the start time and delta from the current time
                         startTimeUTC = game.get('startTimeUTC')
@@ -203,16 +205,16 @@ def current_toronto_game():
                                     else:
                                         toronto_is_home = False
                             return gameId
-                        elif (time_delta < timedelta(hours=1) and gameState == 'OFF'):  # If the game already happened today
+                        elif (gameState == 'OFF'):  # If the game already happened today
                             print(f"Toronto played earlier today")
                             game_today = False   # Don't check again until tomorrow
                             game_is_live = False
                             game_about_to_start = False 
                             return None
-                        elif (False and time_delta < timedelta(minutes=5)):  # If it's not started, but it will within 5 minutes
+                        elif (time_delta < timedelta(minutes=5)) and game_about_to_start == False :  # If it's not started, but it will within 5 minutes
                             print(f"Game is about to start!  Starting in {time_delta}")
                             game_about_to_start = True
-                            #notify_game_about_to_start(1)
+                            notify_game_about_to_start("Game about to start!")
                             return gameId
                         else:  # If it's not live or about to start, then it's later in the day
                             print(f"Game is starting later today {start_time}")
@@ -258,7 +260,7 @@ def activate_goal_light(message):
 # POST to webhook to drive the HomeAssistant automation to send notification that the game is about to start
 #
 def notify_game_about_to_start(message):
-    payload = {"text": message}
+    payload = {"message": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
         if response.status_code == 200:
@@ -336,7 +338,7 @@ def play_sound(sound_file):
     print(f"Connected to Sonos Speaker: {sonos.player_name}")
     print(f"Current Volume: {sonos.volume}")
     original_volume = sonos.volume
-    sonos.volume = 50
+    sonos.volume = 55
 
     # Play the MP3 file
     MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
