@@ -126,7 +126,7 @@ def get_boxscore_data(gameId):
     global game_is_live
     
     endpoint = "v1/gamecenter/" + str(gameId) + "/boxscore"
-    print(f"== Boxscore data: " + endpoint + f" {datetime.now()}")
+    print(f"== Boxscore data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
         
@@ -222,23 +222,28 @@ def current_toronto_game():
                                 if not game_is_live:  # If the game wasn't already live, then set it as started
                                     start_game()
                                 return gameId
-                            elif gameState == 'OFF':  # If the game already happened today
+                            elif gameState == 'OFF' or time_delta < timedelta(hours=-1):  # If the game already happened today
                                 print(f"Toronto played earlier today")
                                 game_today = False   # Don't check again until tomorrow
                                 game_is_live = False
                                 game_about_to_start = False 
                                 return None
-                            elif time_delta < timedelta(minutes=5) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
+                            elif time_delta < timedelta(minutes=5) and time_delta > timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
                                 print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 game_about_to_start = True
                                 notify_game_about_to_start("Game about to start!")
                                 return gameId
                             elif game_about_to_start:
                                 return gameId
-                            else:  # If it's not live or about to start, then it's later in the day
+                            elif time_delta > timedelta(minutes=5):
+                                # If it's not live or about to start, then it's later in the day
                                 print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 return None
+                            else:
+                                print(f"This is an edge case to watch for...")
+                                return None
+
                     print(f"No Toronto games today")
                     return None
                 else:
