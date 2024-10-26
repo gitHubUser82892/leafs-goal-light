@@ -90,6 +90,7 @@ toronto_is_home = False
 toronto_score = 0
 opponent_score = 0
 game_today = False
+wait_time = 0  # Time to wait before checking the game again
 
 
 
@@ -210,9 +211,9 @@ def current_toronto_game():
                             start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
                             current_time = datetime.now(pytz.timezone('US/Eastern'))
                             time_delta = (start_time - current_time)
-                            
+
+                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}"                            
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Delta time:   {str(time_delta).split('.')[0]}")
 
                             # Check if the game is live or about to start or will be later in the day
@@ -239,6 +240,11 @@ def current_toronto_game():
                                 # If it's not live or about to start, then it's later in the day
                                 print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
+                                
+                                rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
+                                if rounded_time_delta > timedelta(minutes=5):
+                                    wait_time = rounded_time_delta.total_seconds()
+                                    print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
                                 return None
                             else:
                                 print(f"This is an edge case to watch for...")
@@ -445,7 +451,8 @@ def goal_tracker_main():
             time.sleep(20)  # Check every 20 seconds if the game is about to start
         else: 
             print(f"No active game.  Waiting 5 minutes...\n")
-            time.sleep(5*60)  # 5 minute delay before checking 
+            time.sleep(wait_time)  # 5 minute delay before checking 
+            wait_time = 5*60  # Set the wait time to 5 minutes for next time
     
 
 
