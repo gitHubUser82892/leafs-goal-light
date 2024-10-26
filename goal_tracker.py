@@ -245,6 +245,8 @@ def current_toronto_game():
 
                                 rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                 if rounded_time_delta > timedelta(minutes=5):
+                                    if time_delta.seconds % 3600 < 300:  # Check if less than 5 minutes remaining
+                                        rounded_time_delta -= timedelta(hours=1)
                                     wait_time = rounded_time_delta.total_seconds()
                                     print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
                                 return None
