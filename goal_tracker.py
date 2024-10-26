@@ -247,6 +247,7 @@ def current_toronto_game():
                                 if rounded_time_delta > timedelta(minutes=5):
                                     wait_time = rounded_time_delta.total_seconds()
                                     print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                    print(f"Wait time set to {wait_time} seconds")
                                 return None
                             else:
                                 print(f"This is an edge case to watch for...")
