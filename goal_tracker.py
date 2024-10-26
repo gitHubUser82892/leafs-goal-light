@@ -455,8 +455,10 @@ def goal_tracker_main():
             print(f"Game about to start!  Waiting 20 seconds...\n")
             time.sleep(20)  # Check every 20 seconds if the game is about to start
         else: 
-            print(f"No active game.  Waiting 5 minutes...\n")
-            time.sleep(wait_time)  # 5 minute delay before checking 
+            hours, remainder = divmod(wait_time, 3600)
+            minutes, _ = divmod(remainder, 60)
+            print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes...\n")
+            time.sleep(wait_time) 
             wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
     
 
