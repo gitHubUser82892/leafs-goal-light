@@ -212,7 +212,7 @@ def current_toronto_game():
                             current_time = datetime.now(pytz.timezone('US/Eastern'))
                             time_delta = (start_time - current_time)
 
-                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}"                            
+                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")                            
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Delta time:   {str(time_delta).split('.')[0]}")
 
@@ -240,7 +240,7 @@ def current_toronto_game():
                                 # If it's not live or about to start, then it's later in the day
                                 print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
-                                
+
                                 rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                 if rounded_time_delta > timedelta(minutes=5):
                                     wait_time = rounded_time_delta.total_seconds()
