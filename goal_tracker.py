@@ -173,6 +173,7 @@ def current_toronto_game():
     global toronto_is_home
     global game_today
     global game_about_to_start
+    global wait_time
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -410,6 +411,7 @@ def goal_tracker_main():
     global game_about_to_start
     global toronto_is_home 
     global game_today
+    global wait_time
 
     game_is_live = False
     game_about_to_start = False
