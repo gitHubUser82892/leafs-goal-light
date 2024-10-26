@@ -74,6 +74,7 @@ from datetime import timedelta
 TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
+DEFAULT_WAIT_TIME = 5*60  # 5 minutes
 
 #SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
@@ -417,6 +418,7 @@ def goal_tracker_main():
     game_about_to_start = False
     toronto_is_home = False
     game_today = False 
+    wait_time = DEFAULT_WAIT_TIME
 
     debug_mode = False
     if (debug_mode == True):
@@ -454,7 +456,7 @@ def goal_tracker_main():
         else: 
             print(f"No active game.  Waiting 5 minutes...\n")
             time.sleep(wait_time)  # 5 minute delay before checking 
-            wait_time = 5*60  # Set the wait time to 5 minutes for next time
+            wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
     
 
 
