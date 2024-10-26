@@ -212,7 +212,7 @@ def current_toronto_game():
                             current_time = datetime.now(pytz.timezone('US/Eastern'))
                             time_delta = (start_time - current_time)
 
-                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")                            
+                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Delta time:   {str(time_delta).split('.')[0]}")
 
