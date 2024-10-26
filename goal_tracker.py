@@ -243,12 +243,13 @@ def current_toronto_game():
                                 print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
 
-                                rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
-                                if rounded_time_delta > timedelta(minutes=5):
-                                    if time_delta.seconds % 3600 < 300:  # Check if less than 5 minutes remaining
-                                        rounded_time_delta -= timedelta(hours=1)
+                                if time_delta > timedelta(hours=1):
+                                    rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                     wait_time = rounded_time_delta.total_seconds()
                                     print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                else:
+                                    wait_time = 5 * 60
+                                    print(f"Wait time set to 5 minutes")
                                 return None
                             else:
                                 print(f"This is an edge case to watch for...")
