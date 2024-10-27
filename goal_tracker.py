@@ -121,6 +121,80 @@ def get_apiweb_nhl_data(endpoint):
         return None
 
 
+    
+#
+# POST to webhook to drive the HomeAssistant automation to turn on goal light
+#
+def activate_goal_light(message):
+    payload = {"text": message}
+    try:
+        response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        print("Successfully sent POST request to webhook")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send POST request to webhook: {e}")
+
+
+#
+# POST to webhook to drive the HomeAssistant automation to send notification that the game is about to start
+#
+def notify_game_about_to_start(message):
+    payload = {"message": message}
+    try:
+        response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
+        response.raise_for_status()  # Raise an HTTPError for bad responses
+        print("Successfully sent POST request to webhook")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send POST request to webhook: {e}")
+
+
+#
+# Play sounds on a Sonos speaker
+#
+def play_sound(sound_file):
+    try:
+        sonos = soco.SoCo(SONOS_IP)
+
+        # Display basic info about the speaker
+        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+        print(f"Current Volume: {sonos.volume}")
+        original_volume = sonos.volume
+        sonos.volume = 55
+
+        # Play the MP3 file
+        MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
+        print(f"Attempting to play: {MP3_FILE_URL}")
+        sonos.play_uri(MP3_FILE_URL)
+
+        # Check the state of the player
+        time.sleep(1)  # Give some time for the Sonos speaker to start playing
+        current_track = sonos.get_current_track_info()
+        state = sonos.get_current_transport_info()["current_transport_state"]
+
+        print(f"Track Info: {current_track}")
+        print(f"Current State: {state}")
+
+        # Volume control for debugging
+        if state == "PLAYING":
+            print("Playback started successfully.")
+        else:
+            print(f"Playback did not start. Current state: {state}")
+
+        # Check the playback position every few seconds
+        for i in range(5):
+            track_position = sonos.get_current_track_info()['position']
+            print(f"Track Position after {i+1} seconds: {track_position}")
+            time.sleep(1)
+
+        sonos.volume = original_volume
+
+    except soco.exceptions.SoCoException as e:
+        print(f"Sonos error: {e}")
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+
+
+
 #
 # Pull the boxscore data from the API and do some parsing
 #
@@ -135,7 +209,10 @@ def get_boxscore_data(gameId):
         game_state = data.get('gameState')
         if game_state != 'LIVE':
             # mark the game as ended
+            print(f"Game is no longer live\n")
             game_is_live = False
+
+            # If we want to do something when the game ends, we can do it here
 
         # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
@@ -216,7 +293,7 @@ def current_toronto_game():
 
                             print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Delta time:   {str(time_delta).split('.')[0]}")
+                            print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
 
                             # Check if the game is live or about to start or will be later in the day
                             gameState = game.get('gameState')
@@ -267,32 +344,6 @@ def current_toronto_game():
     else:
         print("Failed to retrieve data")
     return None
-    
-
-#
-# POST to webhook to drive the HomeAssistant automation to turn on goal light
-#
-def activate_goal_light(message):
-    payload = {"text": message}
-    try:
-        response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
-        print("Successfully sent POST request to webhook")
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to send POST request to webhook: {e}")
-
-
-#
-# POST to webhook to drive the HomeAssistant automation to send notification that the game is about to start
-#
-def notify_game_about_to_start(message):
-    payload = {"message": message}
-    try:
-        response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
-        response.raise_for_status()  # Raise an HTTPError for bad responses
-        print("Successfully sent POST request to webhook")
-    except requests.exceptions.RequestException as e:
-        print(f"Failed to send POST request to webhook: {e}")
 
 
 #
@@ -359,55 +410,6 @@ def start_game():
 
 
 #
-# Play sounds on a Sonos speaker
-#
-def play_sound(sound_file):
-    try:
-        sonos = soco.SoCo(SONOS_IP)
-
-        # Display basic info about the speaker
-        print(f"Connected to Sonos Speaker: {sonos.player_name}")
-        print(f"Current Volume: {sonos.volume}")
-        original_volume = sonos.volume
-        sonos.volume = 55
-
-        # Play the MP3 file
-        MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
-        print(f"Attempting to play: {MP3_FILE_URL}")
-        sonos.play_uri(MP3_FILE_URL)
-
-        # Check the state of the player
-        time.sleep(1)  # Give some time for the Sonos speaker to start playing
-        current_track = sonos.get_current_track_info()
-        state = sonos.get_current_transport_info()["current_transport_state"]
-
-        print(f"Track Info: {current_track}")
-        print(f"Current State: {state}")
-
-        # Volume control for debugging
-        if state == "PLAYING":
-            print("Playback started successfully.")
-        else:
-            print(f"Playback did not start. Current state: {state}")
-
-        # Check the playback position every few seconds
-        for i in range(5):
-            track_position = sonos.get_current_track_info()['position']
-            print(f"Track Position after {i+1} seconds: {track_position}")
-            time.sleep(1)
-
-        sonos.volume = original_volume
-
-    except soco.exceptions.SoCoException as e:
-        print(f"Sonos error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-
-
-
-
-
-#
 # Main function
 #
 def goal_tracker_main():
@@ -444,24 +446,27 @@ def goal_tracker_main():
         #start_game()
         #toronto_is_home = True
         
-        if game_today == False:
+        if game_today == True:
+            if (game_about_to_start == True):
+                print(f"Game about to start!  Waiting 20 seconds...\n")
+                time.sleep(20)  # Check every 20 seconds if the game is about to start
+            else: 
+                hours, remainder = divmod(wait_time, 3600)
+                minutes, _ = divmod(remainder, 60)
+                print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes...\n")
+                time.sleep(wait_time) 
+                wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
+        else:
             print(f"Pausing for 8 hours as there is no game today\n")
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
+        # Main loop to execute during a live game
         while (game_is_live == True):
-            boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data and scores
+            boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
             check_scores(boxscore_data)  # Check the scores for new goals
-            time.sleep(10) # Check scores every 12 seconds
+            time.sleep(10) # Check scores every 10 seconds
         
-        if (game_about_to_start == True):
-            print(f"Game about to start!  Waiting 20 seconds...\n")
-            time.sleep(20)  # Check every 20 seconds if the game is about to start
-        else: 
-            hours, remainder = divmod(wait_time, 3600)
-            minutes, _ = divmod(remainder, 60)
-            print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes...\n")
-            time.sleep(wait_time) 
-            wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
+
     
 
 
