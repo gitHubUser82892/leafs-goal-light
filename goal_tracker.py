@@ -453,7 +453,8 @@ def goal_tracker_main():
             else: 
                 hours, remainder = divmod(wait_time, 3600)
                 minutes, _ = divmod(remainder, 60)
-                print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes...\n")
+                next_check_time = datetime.now(pytz.timezone('US/Eastern')) + timedelta(seconds=wait_time)
+                print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes... until {next_check_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 time.sleep(wait_time) 
                 wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
         else:
