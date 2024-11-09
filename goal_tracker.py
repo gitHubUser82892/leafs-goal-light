@@ -367,21 +367,23 @@ def check_scores(boxscore_data):
         if toronto_is_home:
             if home_team_score > toronto_score:
                 print(f"Boxscore: TORONTO GOAL!\n")
-                toronto_score = home_team_score
                 activate_goal_light("TORONTO GOAL!")
                 play_sound(SOUND_GOAL_HORN_FILE)
             if away_team_score > opponent_score:
                 print(f"Boxscore: OPPONENT GOAL\n")
-                opponent_score = away_team_score
+                
+            toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
+            opponent_score = away_team_score
         else:
             if away_team_score > toronto_score:
                 print(f"Boxscore: TORONTO GOAL!\n")
-                toronto_score = away_team_score
                 activate_goal_light("TORONTO GOAL!")
                 play_sound(SOUND_GOAL_HORN_FILE)
             if home_team_score > opponent_score:
                 print(f"Boxscore: OPPONENT GOAL\n")
-                opponent_score = home_team_score
+
+            toronto_score = away_team_score
+            opponent_score = home_team_score
     except KeyError as e:
         print(f"Key error while checking scores: {e}")
     except Exception as e:
