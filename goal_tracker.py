@@ -243,6 +243,89 @@ def get_boxscore_data(gameId):
         print("Failed to retrieve data")
 
 
+
+#
+# Pull the play-by-play data from the API and do some parsing
+#
+def get_play_by_play_data(gameId):
+    global game_is_live
+    
+    endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
+    print(f"== Play-by-play data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    data = get_apiweb_nhl_data(endpoint)
+    if data:
+        
+        game_state = data.get('gameState')
+        if game_state != 'LIVE':
+            # mark the game as ended
+            print(f"Game is no longer live\n")
+            game_is_live = False
+
+            # If we want to do something when the game ends, we can do it here
+
+        # Parse the score data from the data set
+        home_team = data.get('homeTeam', {})
+        away_team = data.get('awayTeam', {})
+        home_team_score = home_team.get('score')
+        away_team_score = away_team.get('score')
+
+        # Print the current scores
+        if home_team_score is not None:
+            if toronto_is_home == True:
+                print(f"Home Team (Toronto) Score: {home_team_score}")
+            else:
+                print(f"Home Team (Opponent) Score: {home_team_score}")
+        else:
+            print("Home Team Score not found")
+
+        if away_team_score is not None:
+            if toronto_is_home == True:
+                print(f"Away Team (Opponent) Score: {away_team_score}")
+            else:
+                print(f"Away Team (Toronto) Score: {away_team_score}")
+        else:
+            print("Away Team Score not found")
+        print("\n")
+
+        return data
+    else:
+        print("Failed to retrieve data")
+
+
+#
+#  Get the goal scorer and assists data from the play-by-play API
+#
+def get_goal_scorer(game_id):
+    url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        events = data.get('events', [])
+        
+        for event in reversed(events):
+            if event.get('typeCode') == 505:  # Goal event
+                scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
+                if scoring_team_id == TORONTO_TEAM_ID:
+                    scoring_player_id = event.get('details', {}).get('scoringPlayerId')
+                    assist1_player_id = event.get('details', {}).get('assist1PlayerId')
+                    assist2_player_id = event.get('details', {}).get('assist2PlayerId')
+                    
+                    return {
+                        'scoringPlayerID': scoring_player_id,
+                        'assist1PlayerID': assist1_player_id,
+                        'assist2PlayerID': assist2_player_id
+                    }
+    except requests.RequestException as e:
+        print(f"Failed to retrieve play-by-play data: {e}")
+    except KeyError as e:
+        print(f"Key error while parsing data: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    
+    return None
+
+
 #
 # Return the gameId if Toronto is playing now or determine if it's about to start
 #
@@ -447,7 +530,17 @@ def goal_tracker_main():
         #gameId = "2024010006"
         #start_game()
         #toronto_is_home = True
+
+
+        # Debugging of the goal scorer API
+        game_id = '2024010006'  # Replace with the actual game ID
+        goal_scorer_info = get_goal_scorer(game_id)
+        if goal_scorer_info:
+            print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+            print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+            print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
         
+
         if game_today == True:
             if (game_about_to_start == True):
                 print(f"Game about to start!  Waiting 20 seconds...\n")
@@ -465,8 +558,10 @@ def goal_tracker_main():
 
         # Main loop to execute during a live game
         while (game_is_live == True):
-            boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
-            check_scores(boxscore_data)  # Check the scores for new goals
+            #boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
+            #check_scores(boxscore_data)  # Check the scores for new goals
+            playbyplay_data = get_play_by_play_data(gameId)  # Retrive the current play-by-play data from the API
+            check_scores(playbyplay_data)  # Check the scores for new goals
             time.sleep(10) # Check scores every 10 seconds
         
 
