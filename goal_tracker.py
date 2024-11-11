@@ -214,30 +214,6 @@ def get_boxscore_data(gameId):
 
             # If we want to do something when the game ends, we can do it here
 
-        # Parse the score data from the data set
-        home_team = data.get('homeTeam', {})
-        away_team = data.get('awayTeam', {})
-        home_team_score = home_team.get('score')
-        away_team_score = away_team.get('score')
-
-        # Print the current scores
-        if home_team_score is not None:
-            if toronto_is_home == True:
-                print(f"Home Team (Toronto) Score: {home_team_score}")
-            else:
-                print(f"Home Team (Opponent) Score: {home_team_score}")
-        else:
-            print("Home Team Score not found")
-
-        if away_team_score is not None:
-            if toronto_is_home == True:
-                print(f"Away Team (Opponent) Score: {away_team_score}")
-            else:
-                print(f"Away Team (Toronto) Score: {away_team_score}")
-        else:
-            print("Away Team Score not found")
-        print("\n")
-
         return data
     else:
         print("Failed to retrieve data")
@@ -263,9 +239,55 @@ def get_play_by_play_data(gameId):
 
             # If we want to do something when the game ends, we can do it here
 
+        return data
+    else:
+        print("Failed to retrieve data")
+
+
+#
+#  Get the goal scorer and assists data from the play-by-play API
+#
+def get_goal_scorer(data):
+    try:
+        events = data.get('plays', [])
+        
+        for event in reversed(events):
+            if event.get('typeCode') == 505:  # Goal event
+                scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
+                if scoring_team_id == TORONTO_TEAM_ID:
+                    scoring_player_id = event.get('details', {}).get('scoringPlayerId')
+                    assist1_player_id = event.get('details', {}).get('assist1PlayerId')
+                    assist2_player_id = event.get('details', {}).get('assist2PlayerId')
+                    
+                    return {
+                        'scoringPlayerID': scoring_player_id,
+                        'assist1PlayerID': assist1_player_id,
+                        'assist2PlayerID': assist2_player_id
+                    }
+    except KeyError as e:
+        print(f"Key error while parsing data: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    
+    return None
+
+
+#
+# Check the current scores to see if there has been a recent goal
+#
+def check_scores(data):
+    global toronto_score
+    global opponent_score
+    global toronto_is_home
+    home_team_score = 0
+    away_team_score = 0
+    toronto_goal = False
+
+    try:
         # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
         away_team = data.get('awayTeam', {})
+
         home_team_score = home_team.get('score')
         away_team_score = away_team.get('score')
 
@@ -287,43 +309,37 @@ def get_play_by_play_data(gameId):
             print("Away Team Score not found")
         print("\n")
 
-        return data
-    else:
-        print("Failed to retrieve data")
 
+        if toronto_is_home:
+            if home_team_score > toronto_score:
+                print(f"TORONTO GOAL!\n")
+                toronto_goal = True
+            if away_team_score > opponent_score:
+                print(f"OPPONENT GOAL\n")
+                
+            toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
+            opponent_score = away_team_score
+        else:
+            if away_team_score > toronto_score:
+                print(f"TORONTO GOAL!\n")
+                toronto_goal = True
+            if home_team_score > opponent_score:
+                print(f"OPPONENT GOAL\n")
 
-#
-#  Get the goal scorer and assists data from the play-by-play API
-#
-def get_goal_scorer(game_id):
-    url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        events = data.get('events', [])
+            toronto_score = away_team_score
+            opponent_score = home_team_score
         
-        for event in reversed(events):
-            if event.get('typeCode') == 505:  # Goal event
-                scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
-                if scoring_team_id == TORONTO_TEAM_ID:
-                    scoring_player_id = event.get('details', {}).get('scoringPlayerId')
-                    assist1_player_id = event.get('details', {}).get('assist1PlayerId')
-                    assist2_player_id = event.get('details', {}).get('assist2PlayerId')
-                    
-                    return {
-                        'scoringPlayerID': scoring_player_id,
-                        'assist1PlayerID': assist1_player_id,
-                        'assist2PlayerID': assist2_player_id
-                    }
-    except requests.RequestException as e:
-        print(f"Failed to retrieve play-by-play data: {e}")
+        if toronto_goal:
+                activate_goal_light("TORONTO GOAL!")
+                play_sound(SOUND_GOAL_HORN_FILE)
+                get_goal_scorer(data)
+
     except KeyError as e:
-        print(f"Key error while parsing data: {e}")
+        print(f"Key error while checking scores: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    
-    return None
+        print(f"Unexpected error while checking scores: {e}")
+
+    return
 
 
 #
@@ -428,51 +444,6 @@ def current_toronto_game():
         print("Failed to retrieve data")
     return None
 
-
-#
-# Check the current scores to see if there has been a recent goal
-#
-def check_scores(boxscore_data):
-    global toronto_score
-    global opponent_score
-    global toronto_is_home
-    home_team_score = 0
-    away_team_score = 0
-
-    try:
-        # check the boxscore data
-        home_team = boxscore_data.get('homeTeam', {})
-        away_team = boxscore_data.get('awayTeam', {})
-
-        home_team_score = home_team.get('score')
-        away_team_score = away_team.get('score')
-
-        if toronto_is_home:
-            if home_team_score > toronto_score:
-                print(f"Boxscore: TORONTO GOAL!\n")
-                activate_goal_light("TORONTO GOAL!")
-                play_sound(SOUND_GOAL_HORN_FILE)
-            if away_team_score > opponent_score:
-                print(f"Boxscore: OPPONENT GOAL\n")
-                
-            toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
-            opponent_score = away_team_score
-        else:
-            if away_team_score > toronto_score:
-                print(f"Boxscore: TORONTO GOAL!\n")
-                activate_goal_light("TORONTO GOAL!")
-                play_sound(SOUND_GOAL_HORN_FILE)
-            if home_team_score > opponent_score:
-                print(f"Boxscore: OPPONENT GOAL\n")
-
-            toronto_score = away_team_score
-            opponent_score = home_team_score
-    except KeyError as e:
-        print(f"Key error while checking scores: {e}")
-    except Exception as e:
-        print(f"Unexpected error while checking scores: {e}")
-
-    return
 
 
 #
