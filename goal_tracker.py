@@ -343,6 +343,50 @@ def check_scores(data):
 
 
 #
+# Get the roster data for the Toronto Maple Leafs
+#
+def get_toronto_roster():
+    endpoint = "v1/roster/TOR/20242025"
+    data = get_apiweb_nhl_data(endpoint)
+    
+    if data:
+        roster = {}
+        
+        # Process forwards
+        forwards = data.get('forwards', [])
+        for player in forwards:
+            player_id = player.get('id')
+            first_name = player.get('firstName', {}).get('default', '')
+            last_name = player.get('lastName', {}).get('default', '')
+            full_name = f"{first_name} {last_name}"
+            roster[player_id] = full_name
+        
+        # Process defensemen
+        defensemen = data.get('defensemen', [])
+        for player in defensemen:
+            player_id = player.get('id')
+            first_name = player.get('firstName', {}).get('default', '')
+            last_name = player.get('lastName', {}).get('default', '')
+            full_name = f"{first_name} {last_name}"
+            roster[player_id] = full_name
+        
+        # Process goalies
+        goalies = data.get('goalies', [])
+        for player in goalies:
+            player_id = player.get('id')
+            first_name = player.get('firstName', {}).get('default', '')
+            last_name = player.get('lastName', {}).get('default', '')
+            full_name = f"{first_name} {last_name}"
+            roster[player_id] = full_name
+        
+        return roster
+    else:
+        print("Failed to retrieve roster data")
+    
+    return None
+
+
+#
 # Return the gameId if Toronto is playing now or determine if it's about to start
 #
 def current_toronto_game():
@@ -480,6 +524,7 @@ def goal_tracker_main():
     toronto_is_home = False
     game_today = False 
     wait_time = DEFAULT_WAIT_TIME
+    roster = {}
 
     debug_mode = False
     if (debug_mode == True):
@@ -489,6 +534,10 @@ def goal_tracker_main():
         activate_goal_light(1)
         play_sound(SOUND_GOAL_HORN_FILE)
         return # For now, just play the start sound and exit
+
+
+    # Start by getting the roster data and parsing it so we just have the player id and name
+    roster = get_toronto_roster()
 
     # Main loop
     while (True):  # Keep checking for games
