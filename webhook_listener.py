@@ -110,7 +110,7 @@ def serve_mp3(filename):
 # The route to serve any MP3 file specified by the filename parameter
 #
 @app.route('/roster/<filename>')
-def serve_mp3(filename):
+def serve_roster_mp3(filename):
     try:
         file_path = os.path.join(ROSTER_SOUNDS_DIRDIR, filename)
         print(f"Trying to send file from {file_path}")
