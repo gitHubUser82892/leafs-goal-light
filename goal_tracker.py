@@ -245,7 +245,7 @@ def get_play_by_play_data(gameId):
 
 
 #
-#  Get the goal scorer and assists data from the play-by-play API
+#  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal
 #
 def get_goal_scorer(data):
     try:
@@ -329,10 +329,15 @@ def check_scores(data):
             toronto_score = away_team_score
             opponent_score = home_team_score
         
+        # If there was a goal, then activate the goal light and play the goal horn
         if toronto_goal:
-                activate_goal_light("TORONTO GOAL!")
-                play_sound(SOUND_GOAL_HORN_FILE)
-                get_goal_scorer(data)
+            activate_goal_light("TORONTO GOAL!")
+            play_sound(SOUND_GOAL_HORN_FILE)
+            goal_scorer_info = get_goal_scorer(data)
+            if goal_scorer_info:
+                print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+                print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+                print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
     except KeyError as e:
         print(f"Key error while checking scores: {e}")
@@ -381,7 +386,7 @@ def get_toronto_roster():
         
         return roster
     else:
-        print("Failed to retrieve roster data")
+        print(f"Failed to retrieve roster data\n")
     
     return None
 
@@ -537,7 +542,12 @@ def goal_tracker_main():
 
 
     # Start by getting the roster data and parsing it so we just have the player id and name
+    print(f"Retrieving roster data...")
     roster = get_toronto_roster()
+    if roster:
+        print(f"Roster data retrieved successfully")
+    time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
+
 
     # Main loop
     while (True):  # Keep checking for games
