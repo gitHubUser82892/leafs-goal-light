@@ -107,7 +107,7 @@ def serve_mp3(filename):
 
 
 #
-# The route to serve any MP3 file specified by the filename parameter
+# The route to serve any MP3 file in the roster directory
 #
 @app.route('/roster/<filename>')
 def serve_roster_mp3(filename):
