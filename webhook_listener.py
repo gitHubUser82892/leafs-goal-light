@@ -112,12 +112,12 @@ def serve_mp3(filename):
 @app.route('/roster/<filename>')
 def serve_roster_mp3(filename):
     try:
-        file_path = os.path.join(ROSTER_SOUNDS_DIRDIR, filename)
+        file_path = os.path.join(ROSTER_SOUNDS_DIR, filename)
         print(f"Trying to send file from {file_path}")
 
         # Check if the file exists in the directory
         if os.path.exists(file_path):
-            return send_from_directory(ROSTER_SOUNDS_DIR_DIR, filename)
+            return send_from_directory(ROSTER_SOUNDS_DIR, filename)
         else:
             print(f"File not found: {file_path}")
             return "File not found", 404
