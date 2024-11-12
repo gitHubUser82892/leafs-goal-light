@@ -88,7 +88,6 @@ def goal_tracker_main():
             "/roster/Knies.mp3",
             "/roster/Assist.mp3",
             "/roster/Marner.mp3",
-            "/roster/And.mp3",
             "/roster/Nylander.mp3"
         ])
         return # For now, just play the start sound and exit

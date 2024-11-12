@@ -53,7 +53,7 @@ Functions:
     - notify_game_about_to_start(message): Sends a POST request to the Home Assistant webhook to notify that the game is about to start.
     - check_scores(boxscore_data): Checks the current scores and triggers actions if there has been a recent goal.
     - start_game(): Resets the scores and sets the game as live when it starts.
-    - play_sound(sound_file): Plays a sound on the Sonos speaker.
+    - play_sounds(sound_file): Plays a sound on the Sonos speaker.
     - goal_tracker_main(): The main function that runs the goal tracker.
 Usage:
     Run the script to start tracking the Toronto Maple Leafs' games. The script will log its output to a specified log file and continuously check for game updates.
@@ -92,6 +92,7 @@ toronto_score = 0
 opponent_score = 0
 game_today = False
 wait_time = 0  # Time to wait before checking the game again
+roster = {}  # Dictionary to store the roster data
 
 
 
@@ -148,10 +149,19 @@ def notify_game_about_to_start(message):
         print(f"Failed to send POST request to webhook: {e}")
 
 
+
 #
-# Play sounds on a Sonos speaker
+#  Play sounds based on the list of input files
 #
-def play_sound(sound_file):
+# Example of how to call play_sounds
+# play_sounds([
+#     "/roster/GoalScoredBy.mp3",
+#     "/roster/Knies.mp3",
+#     "/roster/Assist.mp3",
+#     "/roster/Marner.mp3",
+#     "/roster/Nylander.mp3"
+# ])
+def play_sounds(sound_files):
     try:
         sonos = soco.SoCo(SONOS_IP)
 
@@ -159,32 +169,34 @@ def play_sound(sound_file):
         print(f"Connected to Sonos Speaker: {sonos.player_name}")
         print(f"Current Volume: {sonos.volume}")
         original_volume = sonos.volume
-        sonos.volume = 55
+        sonos.volume = 50
 
-        # Play the MP3 file
-        MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
-        print(f"Attempting to play: {MP3_FILE_URL}")
-        sonos.play_uri(MP3_FILE_URL)
+        for sound_file in sound_files:
+            # Play the MP3 file
+            MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
+            print(f"Attempting to play: {MP3_FILE_URL}")
+            sonos.play_uri(MP3_FILE_URL)
 
-        # Check the state of the player
-        time.sleep(1)  # Give some time for the Sonos speaker to start playing
-        current_track = sonos.get_current_track_info()
-        state = sonos.get_current_transport_info()["current_transport_state"]
+            # Check the state of the player
+            #current_track = sonos.get_current_track_info()
+            state = sonos.get_current_transport_info()["current_transport_state"]
 
-        print(f"Track Info: {current_track}")
-        print(f"Current State: {state}")
+            #print(f"Track Info: {current_track}")
+            print(f"Current State: {state}")
 
-        # Volume control for debugging
-        if state == "PLAYING":
-            print("Playback started successfully.")
-        else:
-            print(f"Playback did not start. Current state: {state}")
+            # Volume control for debugging
+            if state == "PLAYING":
+                print("Playback started successfully.")
+            else:
+                print(f"Playback did not start. Current state: {state}")
 
-        # Check the playback position every few seconds
-        for i in range(5):
-            track_position = sonos.get_current_track_info()['position']
-            print(f"Track Position after {i+1} seconds: {track_position}")
-            time.sleep(1)
+            # Check the playback position every few seconds
+            while state == "PLAYING" or state == "TRANSITIONING":
+                #track_position = sonos.get_current_track_info()['position']
+                #print(f"Track Position: {track_position}")
+                time.sleep(0.05)
+                state = sonos.get_current_transport_info()["current_transport_state"]
+                print(f"Current State: {state}")
 
         sonos.volume = original_volume
 
@@ -245,7 +257,7 @@ def get_play_by_play_data(gameId):
 
 
 #
-#  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal
+#  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal.  Return the list of names
 #
 def get_goal_scorer(data):
     try:
@@ -332,12 +344,25 @@ def check_scores(data):
         # If there was a goal, then activate the goal light and play the goal horn
         if toronto_goal:
             activate_goal_light("TORONTO GOAL!")
-            play_sound(SOUND_GOAL_HORN_FILE)
+            play_sounds(SOUND_GOAL_HORN_FILE)
             goal_scorer_info = get_goal_scorer(data)
             if goal_scorer_info:
                 print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
                 print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
                 print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+
+                sounds_to_play = ["/roster/GoalScoredBy.mp3"]
+                if goal_scorer_info['scoringPlayerID'] in roster:
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['scoringPlayerID']]}.mp3")
+                
+                if goal_scorer_info['assist1PlayerID'] in roster:
+                    sounds_to_play.append("/roster/Assist.mp3")
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist1PlayerID']]}.mp3")
+                
+                if goal_scorer_info['assist2PlayerID'] in roster:
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist2PlayerID']]}.mp3")
+                
+                play_sounds(sounds_to_play)
 
     except KeyError as e:
         print(f"Key error while checking scores: {e}")
@@ -361,28 +386,22 @@ def get_toronto_roster():
         forwards = data.get('forwards', [])
         for player in forwards:
             player_id = player.get('id')
-            first_name = player.get('firstName', {}).get('default', '')
             last_name = player.get('lastName', {}).get('default', '')
-            full_name = f"{first_name} {last_name}"
-            roster[player_id] = full_name
+            roster[player_id] = last_name
         
         # Process defensemen
         defensemen = data.get('defensemen', [])
         for player in defensemen:
             player_id = player.get('id')
-            first_name = player.get('firstName', {}).get('default', '')
             last_name = player.get('lastName', {}).get('default', '')
-            full_name = f"{first_name} {last_name}"
-            roster[player_id] = full_name
+            roster[player_id] = last_name
         
         # Process goalies
         goalies = data.get('goalies', [])
         for player in goalies:
             player_id = player.get('id')
-            first_name = player.get('firstName', {}).get('default', '')
             last_name = player.get('lastName', {}).get('default', '')
-            full_name = f"{first_name} {last_name}"
-            roster[player_id] = full_name
+            roster[player_id] = last_name
         
         return roster
     else:
@@ -510,7 +529,7 @@ def start_game():
     opponent_score = 0
 
     print(f"Game has started!\n")
-    play_sound(SOUND_GAME_START_FILE)
+    play_sounds(SOUND_GAME_START_FILE)
 
 
 
@@ -523,21 +542,21 @@ def goal_tracker_main():
     global toronto_is_home 
     global game_today
     global wait_time
+    global roster
 
     game_is_live = False
     game_about_to_start = False
     toronto_is_home = False
     game_today = False 
     wait_time = DEFAULT_WAIT_TIME
-    roster = {}
 
     debug_mode = False
     if (debug_mode == True):
         print(f"Debug mode is on\n")
-        play_sound(SOUND_GAME_START_FILE)
+        play_sounds(SOUND_GAME_START_FILE)
         time.sleep(5)
         activate_goal_light(1)
-        play_sound(SOUND_GOAL_HORN_FILE)
+        play_sounds(SOUND_GOAL_HORN_FILE)
         return # For now, just play the start sound and exit
 
 
