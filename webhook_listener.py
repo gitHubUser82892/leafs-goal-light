@@ -39,50 +39,91 @@ PROCESS_NAME = "python3 /home/rmayor/Projects/leafs_goal_light/goal_tracker.py"
 
 # MP3 directory for leafs goal horn
 MP3_DIR = "/home/rmayor/Projects/leafs_goal_light"
+ROSTER_SOUNDS_DIR = "/home/rmayor/Projects/leafs_goal_light/roster_sounds"
 
 
 
 #
 #  The route for the game start sound file
 #
-@app.route('/files/leafs_game_start.mp3')
-def serve_start_mp3():
-    mp3_filename = "leafs_game_start.mp3"
-    try: 
-       file_path = os.path.join(MP3_DIR, mp3_filename)
-       print(f"Trying to send file from {file_path}")
+# @app.route('/files/leafs_game_start.mp3')
+# def serve_start_mp3():
+#     mp3_filename = "leafs_game_start.mp3"
+#     try: 
+#        file_path = os.path.join(MP3_DIR, mp3_filename)
+#        print(f"Trying to send file from {file_path}")
 
-       # Check if the file exists in the directory
-       if os.path.exists(os.path.join(MP3_DIR, mp3_filename)):
-          return send_from_directory(MP3_DIR, mp3_filename)
-       else:
-          print(f"File not found: {file_path}")
-          return "File not found", 404
-    except Exception as e:
-       print(f"Error sending mp3 file: {e}")
-       return "Error serving file", 500
+#        # Check if the file exists in the directory
+#        if os.path.exists(os.path.join(MP3_DIR, mp3_filename)):
+#           return send_from_directory(MP3_DIR, mp3_filename)
+#        else:
+#           print(f"File not found: {file_path}")
+#           return "File not found", 404
+#     except Exception as e:
+#        print(f"Error sending mp3 file: {e}")
+#        return "Error serving file", 500
 
 
 #
 # The route for the goal sound file
 #
-@app.route('/files/leafs_goal_horn.mp3')
-def serve_horn_mp3():
-    mp3_filename = "leafs_goal_horn.mp3"
+# @app.route('/files/leafs_goal_horn.mp3')
+# def serve_horn_mp3():
+#     mp3_filename = "leafs_goal_horn.mp3"
 
-    try: 
-       file_path = os.path.join(MP3_DIR, mp3_filename)
-       print(f"Trying to send file from {file_path}")
+#     try: 
+#        file_path = os.path.join(MP3_DIR, mp3_filename)
+#        print(f"Trying to send file from {file_path}")
 
-       # Check if the file exists in the directory
-       if os.path.exists(os.path.join(MP3_DIR, mp3_filename)):
-          return send_from_directory(MP3_DIR, mp3_filename)
-       else:
-          print(f"File not found: {mp3_filename}")
-          return "File not found", 404
+#        # Check if the file exists in the directory
+#        if os.path.exists(os.path.join(MP3_DIR, mp3_filename)):
+#           return send_from_directory(MP3_DIR, mp3_filename)
+#        else:
+#           print(f"File not found: {mp3_filename}")
+#           return "File not found", 404
+#     except Exception as e:
+#        print(f"Error sending mp3 file: {e}")
+#        return "Error serving file", 500
+    
+
+#
+# The route to serve any MP3 file specified by the filename parameter
+#
+@app.route('/files/<filename>')
+def serve_mp3(filename):
+    try:
+        file_path = os.path.join(MP3_DIR, filename)
+        print(f"Trying to send file from {file_path}")
+
+        # Check if the file exists in the directory
+        if os.path.exists(file_path):
+            return send_from_directory(MP3_DIR, filename)
+        else:
+            print(f"File not found: {file_path}")
+            return "File not found", 404
     except Exception as e:
-       print(f"Error sending mp3 file: {e}")
-       return "Error serving file", 500
+        print(f"Error sending mp3 file: {e}")
+        return "Error serving file", 500
+
+
+#
+# The route to serve any MP3 file specified by the filename parameter
+#
+@app.route('/roster/<filename>')
+def serve_mp3(filename):
+    try:
+        file_path = os.path.join(ROSTER_SOUNDS_DIRDIR, filename)
+        print(f"Trying to send file from {file_path}")
+
+        # Check if the file exists in the directory
+        if os.path.exists(file_path):
+            return send_from_directory(ROSTER_SOUNDS_DIR_DIR, filename)
+        else:
+            print(f"File not found: {file_path}")
+            return "File not found", 404
+    except Exception as e:
+        print(f"Error sending mp3 file: {e}")
+        return "Error serving file", 500
 
 
 #
