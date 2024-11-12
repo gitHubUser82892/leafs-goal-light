@@ -81,8 +81,14 @@ def goal_tracker_main():
     debug_mode = True
     if (debug_mode == True):
         print(f"Debug mode is on\n")
-        play_sound(SOUND_GAME_START_FILE)
-        play_sound(SOUND_GOAL_HORN_FILE)
+        #play_sound(SOUND_GAME_START_FILE)
+        #play_sound(SOUND_GOAL_HORN_FILE)
+        play_sound("/roster/GoalScoredBy.mp3")
+        play_sound("/roster/Knies.mp3")
+        play_sound("/roster/Assist.mp3")
+        play_sound("/roster/Marner.mp3")
+        play_sound("/roster/And.mp3")
+        play_sound("/roster/Nylander.mp3")
         return # For now, just play the start sound and exit
     
 
