@@ -26,7 +26,7 @@ import os
 import time
 import signal
 import subprocess
-from goal_tracker import activate_goal_light, play_sound
+from goal_tracker import activate_goal_light, play_sounds
 
 # Modify the PATH to include the necessary directories
 print("PATH:", os.environ["PATH"])
