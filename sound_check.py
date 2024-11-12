@@ -48,7 +48,7 @@ def play_sounds(sound_files):
                 print(f"Playback did not start. Current state: {state}")
 
             # Check the playback position every few seconds
-            while state == "PLAYING":
+            while state == "PLAYING" or state == "TRANSITIONING":
                 #track_position = sonos.get_current_track_info()['position']
                 #print(f"Track Position: {track_position}")
                 time.sleep(0.05)
