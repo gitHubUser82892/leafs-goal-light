@@ -563,12 +563,12 @@ def goal_tracker_main():
 
 
         # Debugging of the goal scorer API
-        game_id = '2024010006'  # Replace with the actual game ID
-        goal_scorer_info = get_goal_scorer(game_id)
-        if goal_scorer_info:
-            print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-            print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-            print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+        # game_id = '2024010006'  # Replace with the actual game ID
+        # goal_scorer_info = get_goal_scorer(game_id)
+        # if goal_scorer_info:
+        #     print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+        #     print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+        #     print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
         
 
         if game_today == True:
