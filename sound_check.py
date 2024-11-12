@@ -18,7 +18,7 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 #
 # Play sounds on a Sonos speaker
 #
-def play_sound(sound_file):
+def play_sounds(sound_files):
     try:
         sonos = soco.SoCo(SONOS_IP)
 
@@ -28,32 +28,32 @@ def play_sound(sound_file):
         original_volume = sonos.volume
         sonos.volume = 15
 
-        # Play the MP3 file
-        MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
-        print(f"Attempting to play: {MP3_FILE_URL}")
-        sonos.play_uri(MP3_FILE_URL)
+        for sound_file in sound_files:
+            # Play the MP3 file
+            MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
+            print(f"Attempting to play: {MP3_FILE_URL}")
+            sonos.play_uri(MP3_FILE_URL)
 
-        # Check the state of the player
-        time.sleep(1)  # Give some time for the Sonos speaker to start playing
-        current_track = sonos.get_current_track_info()
-        state = sonos.get_current_transport_info()["current_transport_state"]
-
-        print(f"Track Info: {current_track}")
-        print(f"Current State: {state}")
-
-        # Volume control for debugging
-        if state == "PLAYING":
-            print("Playback started successfully.")
-        else:
-            print(f"Playback did not start. Current state: {state}")
-
-        # Check the playback position every few seconds
-        while state == "PLAYING":
-            track_position = sonos.get_current_track_info()['position']
-            print(f"Track Position: {track_position}")
-            time.sleep(0.25)
+            # Check the state of the player
+            current_track = sonos.get_current_track_info()
             state = sonos.get_current_transport_info()["current_transport_state"]
+
+            print(f"Track Info: {current_track}")
             print(f"Current State: {state}")
+
+            # Volume control for debugging
+            if state == "PLAYING":
+                print("Playback started successfully.")
+            else:
+                print(f"Playback did not start. Current state: {state}")
+
+            # Check the playback position every few seconds
+            while state == "PLAYING":
+                track_position = sonos.get_current_track_info()['position']
+                print(f"Track Position: {track_position}")
+                time.sleep(0.1)
+                state = sonos.get_current_transport_info()["current_transport_state"]
+                print(f"Current State: {state}")
 
         sonos.volume = original_volume
 
@@ -83,12 +83,14 @@ def goal_tracker_main():
         print(f"Debug mode is on \n")
         #play_sound(SOUND_GAME_START_FILE)
         #play_sound(SOUND_GOAL_HORN_FILE)
-        play_sound("/roster/GoalScoredBy.mp3")
-        play_sound("/roster/Knies.mp3")
-        play_sound("/roster/Assist.mp3")
-        play_sound("/roster/Marner.mp3")
-        play_sound("/roster/And.mp3")
-        play_sound("/roster/Nylander.mp3")
+        play_sounds([
+            "/roster/GoalScoredBy.mp3",
+            "/roster/Knies.mp3",
+            "/roster/Assist.mp3",
+            "/roster/Marner.mp3",
+            "/roster/And.mp3",
+            "/roster/Nylander.mp3"
+        ])
         return # For now, just play the start sound and exit
     
 
