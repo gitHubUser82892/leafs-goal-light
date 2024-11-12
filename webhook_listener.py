@@ -19,6 +19,9 @@
 #  /etc/systemd/system/webhook_listener.service
 #  sudo systemctl daemon-reload   After changing the service file
 #
+#
+#  If this file cannot be run or loaded, then it cannot be changed without manually rebasing the git repo
+#  Use the following to do so:  git pull --rebase
 
 
 from flask import Flask, request, jsonify, send_from_directory
