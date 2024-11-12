@@ -35,10 +35,10 @@ def play_sounds(sound_files):
             sonos.play_uri(MP3_FILE_URL)
 
             # Check the state of the player
-            current_track = sonos.get_current_track_info()
+            #current_track = sonos.get_current_track_info()
             state = sonos.get_current_transport_info()["current_transport_state"]
 
-            print(f"Track Info: {current_track}")
+            #print(f"Track Info: {current_track}")
             print(f"Current State: {state}")
 
             # Volume control for debugging
@@ -49,9 +49,9 @@ def play_sounds(sound_files):
 
             # Check the playback position every few seconds
             while state == "PLAYING":
-                track_position = sonos.get_current_track_info()['position']
-                print(f"Track Position: {track_position}")
-                time.sleep(0.1)
+                #track_position = sonos.get_current_track_info()['position']
+                #print(f"Track Position: {track_position}")
+                time.sleep(0.05)
                 state = sonos.get_current_transport_info()["current_transport_state"]
                 print(f"Current State: {state}")
 
