@@ -595,7 +595,9 @@ def goal_tracker_main():
         
 
         if game_today == True:
-            if (game_about_to_start == True):
+            if (game_is_live == True):
+                print(f"Game has already started\n")
+            elif (game_about_to_start == True):
                 print(f"Game about to start!  Waiting 20 seconds...\n")
                 time.sleep(20)  # Check every 20 seconds if the game is about to start
             else: 
