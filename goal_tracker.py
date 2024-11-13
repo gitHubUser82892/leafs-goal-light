@@ -162,6 +162,8 @@ def notify_game_about_to_start(message):
 #     "/roster/Nylander.mp3"
 # ])
 def play_sounds(sound_files):
+    if isinstance(sound_files, str):
+        sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
         sonos = soco.SoCo(SONOS_IP)
 
