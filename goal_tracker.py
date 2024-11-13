@@ -168,10 +168,12 @@ def play_sounds(sound_files):
         # Display basic info about the speaker
         print(f"Connected to Sonos Speaker: {sonos.player_name}")
         print(f"Current Volume: {sonos.volume}")
+        print(f"Playing sounds: {sound_files}")
         original_volume = sonos.volume
         sonos.volume = 50
 
         for sound_file in sound_files:
+            print(f"Sound parameter: {sound_file}")
             # Play the MP3 file
             MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
             print(f"Attempting to play: {MP3_FILE_URL}")
