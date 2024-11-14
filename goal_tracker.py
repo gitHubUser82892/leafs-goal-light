@@ -74,7 +74,7 @@ from datetime import timedelta
 TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
-DEFAULT_WAIT_TIME = 5*60  # 5 minutes
+DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 
 #SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
@@ -466,6 +466,16 @@ def current_toronto_game():
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
 
+#
+# Current time: 2024-11-13 19:31:06
+#Start time:   2024-11-13 19:30:00
+#Time until game starts:   -1 day, 23:58:53
+#This is an edge case to watch for...
+#No active game. Waiting 0 hours and 5 minutes... until 2024-11-13 19:36:06
+#
+#
+#
+
                             # Check if the game is live or about to start or will be later in the day
                             gameState = game.get('gameState')
                             if gameState == 'LIVE':  # Check if the game is live
@@ -479,7 +489,7 @@ def current_toronto_game():
                                 game_is_live = False
                                 game_about_to_start = False 
                                 return None
-                            elif time_delta < timedelta(minutes=5) and time_delta > timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
+                            elif time_delta > - timedelta(minutes=5) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
                                 print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 game_about_to_start = True
                                 notify_game_about_to_start("Game about to start!")
