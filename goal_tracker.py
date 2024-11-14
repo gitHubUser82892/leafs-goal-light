@@ -291,7 +291,7 @@ def get_goal_scorer(data):
 #
 # Check the current scores to see if there has been a recent goal
 #
-def check_scores(data):
+def check_scores(data, gameId):
     global toronto_score
     global opponent_score
     global toronto_is_home
@@ -349,24 +349,31 @@ def check_scores(data):
         if toronto_goal:
             activate_goal_light("TORONTO GOAL!")
             play_sounds(SOUND_GOAL_HORN_FILE)
-            goal_scorer_info = get_goal_scorer(data)
-            if goal_scorer_info:
-                print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-                print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-                print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+            goal_scorer_info = None
+            while goal_scorer_info is None:
+                time.sleep(2)
+                data = get_play_by_play_data(gameId)
+                goal_scorer_info = get_goal_scorer(data)
+                if goal_scorer_info:
+                    print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+                    print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+                    print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
-                sounds_to_play = ["/roster/GoalScoredBy.mp3"]
-                if goal_scorer_info['scoringPlayerID'] in roster:
-                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['scoringPlayerID']]}.mp3")
-                
-                if goal_scorer_info['assist1PlayerID'] in roster:
-                    sounds_to_play.append("/roster/Assist.mp3")
-                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist1PlayerID']]}.mp3")
-                
-                if goal_scorer_info['assist2PlayerID'] in roster:
-                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist2PlayerID']]}.mp3")
-                
-                play_sounds(sounds_to_play)
+                    sounds_to_play = ["/roster/GoalScoredBy.mp3"]
+                    if goal_scorer_info['scoringPlayerID'] in roster:
+                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['scoringPlayerID']]}.mp3")
+                    
+                    if goal_scorer_info['assist1PlayerID'] in roster:
+                        sounds_to_play.append("/roster/Assist.mp3")
+                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist1PlayerID']]}.mp3")
+                    
+                    if goal_scorer_info['assist2PlayerID'] in roster:
+                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist2PlayerID']]}.mp3")
+                    
+                    play_sounds(sounds_to_play)
+                else:
+                    print(f"Failed to retrieve goal scorer information, retrying...\n")
+                    time.sleep(2)  # Wait for 2 seconds before retrying
 
     except KeyError as e:
         print(f"Key error while checking scores: {e}")
@@ -626,7 +633,7 @@ def goal_tracker_main():
             #boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
             #check_scores(boxscore_data)  # Check the scores for new goals
             playbyplay_data = get_play_by_play_data(gameId)  # Retrive the current play-by-play data from the API
-            check_scores(playbyplay_data)  # Check the scores for new goals
+            check_scores(playbyplay_data, gameId)  # Check the scores for new goals
             time.sleep(10) # Check scores every 10 seconds
         
 
