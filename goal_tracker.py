@@ -490,10 +490,8 @@ def current_toronto_game():
                                 game_about_to_start = False 
                                 return None
                             elif time_delta > - timedelta(minutes=5) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
-                                print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
-                                game_about_to_start = True
-                                notify_game_about_to_start("Game about to start!")
-                                return gameId
+                                print(f"This is an edge case to watch for...")
+                                return None
                             elif game_about_to_start:
                                 return gameId
                             elif time_delta > timedelta(minutes=5):
@@ -509,9 +507,11 @@ def current_toronto_game():
                                     wait_time = 5 * 60
                                     print(f"Wait time set to 5 minutes")
                                 return None
-                            else:
-                                print(f"This is an edge case to watch for...")
-                                return None
+                            else: 
+                                print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
+                                game_about_to_start = True
+                                notify_game_about_to_start("Game about to start!")
+                                return gameId
 
                     print(f"No Toronto games today")
                     return None
