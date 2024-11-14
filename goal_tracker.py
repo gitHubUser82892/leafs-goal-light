@@ -246,11 +246,10 @@ def get_play_by_play_data(gameId):
     print(f"== Play-by-play data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
-        
         game_state = data.get('gameState')
-        if game_state != 'LIVE':
+        if game_state == 'OFF':  # should I count CRIT as live?
             # mark the game as ended
-            print(f"Game is no longer live\n")
+            print(f"Game is no longer live.  gameState: {game_state}\n")  
             game_is_live = False
 
             # If we want to do something when the game ends, we can do it here
@@ -262,24 +261,44 @@ def get_play_by_play_data(gameId):
 
 #
 #  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal.  Return the list of names
+#  
+#  Either the event isn't created at the same time that the score is updated, or the names don't get updated in the event or
+#  the a new event is created with the names.  Not sure...  
+
+#  TODO:  Need to test this with a live game to see how it works.  Will need to keep checking, but in the right order.
+#  Note that there is a sortOrder field in the event data that could be used to sort the events in the right order.
+#  Perhaps what I should do is get the event, check that it's within the last few minutes, and the continuously refresh
+#  the data for this event until the names are updated.  The problem is there is no timestamp on the event data, but there is
+#  time in period.  clock.timeRemaining might be the baseline to calculate against, but need to capture it when the goal is
+#  scored and before they refresh.
+#  
 #
-def get_goal_scorer(data):
+def get_goal_scorer(gameId):
     try:
-        events = data.get('plays', [])
-        
-        for event in reversed(events):
-            if event.get('typeCode') == 505:  # Goal event
-                scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
-                if scoring_team_id == TORONTO_TEAM_ID:
-                    scoring_player_id = event.get('details', {}).get('scoringPlayerId')
-                    assist1_player_id = event.get('details', {}).get('assist1PlayerId')
-                    assist2_player_id = event.get('details', {}).get('assist2PlayerId')
-                    
-                    return {
-                        'scoringPlayerID': scoring_player_id,
-                        'assist1PlayerID': assist1_player_id,
-                        'assist2PlayerID': assist2_player_id
-                    }
+        while True:
+            data = get_play_by_play_data(gameId)
+            events = data.get('plays', [])
+            print(f"Looking for goal scorer info...")
+            
+            # Sort events based on sortOrder field
+            events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
+            
+            for event in events:
+                if event.get('typeCode') == 505:  # Goal event
+                    scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
+                    if scoring_team_id == TORONTO_TEAM_ID:
+                        scoring_player_id = event.get('details', {}).get('scoringPlayerId')
+                        if scoring_player_id:  # Check if scoringPlayerId is populated
+                            assist1_player_id = event.get('details', {}).get('assist1PlayerId')
+                            assist2_player_id = event.get('details', {}).get('assist2PlayerId')
+                            
+                            return {
+                                'scoringPlayerID': scoring_player_id,
+                                'assist1PlayerID': assist1_player_id,
+                                'assist2PlayerID': assist2_player_id
+                            }
+            time.sleep(5)  # Check every 5 seconds
+
     except KeyError as e:
         print(f"Key error while parsing data: {e}")
     except Exception as e:
@@ -350,30 +369,30 @@ def check_scores(data, gameId):
             activate_goal_light("TORONTO GOAL!")
             play_sounds(SOUND_GOAL_HORN_FILE)
             goal_scorer_info = None
-            while goal_scorer_info is None:
-                time.sleep(2)
-                data = get_play_by_play_data(gameId)
-                goal_scorer_info = get_goal_scorer(data)
-                if goal_scorer_info:
-                    print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-                    print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-                    print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
-                    sounds_to_play = ["/roster/GoalScoredBy.mp3"]
-                    if goal_scorer_info['scoringPlayerID'] in roster:
-                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['scoringPlayerID']]}.mp3")
-                    
-                    if goal_scorer_info['assist1PlayerID'] in roster:
-                        sounds_to_play.append("/roster/Assist.mp3")
-                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist1PlayerID']]}.mp3")
-                    
-                    if goal_scorer_info['assist2PlayerID'] in roster:
-                        sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist2PlayerID']]}.mp3")
-                    
-                    play_sounds(sounds_to_play)
-                else:
-                    print(f"Failed to retrieve goal scorer information, retrying...\n")
-                    time.sleep(2)  # Wait for 2 seconds before retrying
+            time.sleep(5)  # not sure how long we need to wait
+
+            goal_scorer_info = get_goal_scorer(gameId)  # This will loop until it finds the goal scorer info
+            if goal_scorer_info:
+                print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+                print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+                print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+
+                sounds_to_play = ["/roster/GoalScoredBy.mp3"]
+                if goal_scorer_info['scoringPlayerID'] in roster:
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['scoringPlayerID']]}.mp3")
+                
+                if goal_scorer_info['assist1PlayerID'] in roster:
+                    sounds_to_play.append("/roster/Assist.mp3")
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist1PlayerID']]}.mp3")
+                
+                if goal_scorer_info['assist2PlayerID'] in roster:
+                    sounds_to_play.append(f"/roster/{roster[goal_scorer_info['assist2PlayerID']]}.mp3")
+                
+                play_sounds(sounds_to_play)
+            else:
+                print(f"Failed to retrieve goal scorer information, retrying...\n")
+
 
     except KeyError as e:
         print(f"Key error while checking scores: {e}")
