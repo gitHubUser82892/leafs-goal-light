@@ -499,7 +499,8 @@ def current_toronto_game():
 #This is an edge case to watch for...
 #No active game. Waiting 0 hours and 5 minutes... until 2024-11-13 19:36:06
 #
-#
+# TODO:  Simplify this logic.  The start time will always be about 10-15 minutes before the actual start.  So I could use
+# the start time to trigger the game about to start, and then just check for gameState == LIVE to trigger the game is live.
 #
 
                             # Check if the game is live or about to start or will be later in the day
@@ -515,7 +516,7 @@ def current_toronto_game():
                                 game_is_live = False
                                 game_about_to_start = False 
                                 return None
-                            elif time_delta > - timedelta(minutes=5) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
+                            elif time_delta > (- timedelta(minutes=5)) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
                                 print(f"This is an edge case to watch for...")
                                 return None
                             elif game_about_to_start:
