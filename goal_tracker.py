@@ -75,6 +75,7 @@ TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
+DEBUGMODE = True
 
 #SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
@@ -640,14 +641,7 @@ def goal_tracker_main():
     game_today = False 
     wait_time = DEFAULT_WAIT_TIME
 
-    debug_mode = False
-    if (debug_mode == True):
-        print(f"Debug mode is on\n")
-        play_sounds(SOUND_GAME_START_FILE)
-        time.sleep(5)
-        activate_goal_light(1)
-        play_sounds(SOUND_GOAL_HORN_FILE)
-        return # For now, just play the start sound and exit
+    debug_mode = DEBUGMODE
 
 
     # Start by getting the roster data and parsing it so we just have the player id and name
@@ -657,6 +651,26 @@ def goal_tracker_main():
         print(f"Roster data retrieved successfully")
     time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
 
+    if (debug_mode == True):
+        print(f"Debug mode is on\n")
+        #play_sounds(SOUND_GAME_START_FILE)
+        #time.sleep(5)
+        #activate_goal_light(1)
+        #play_sounds(SOUND_GOAL_HORN_FILE)
+
+        gameId = "2024010006"
+        start_game()
+        toronto_is_home = True
+        get_play_by_play_data(gameId, True)
+
+        goal_scorer_info = get_goal_scorer(game_id)
+        if goal_scorer_info:
+            print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+            print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+            print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+
+        return # For now, just play the start sound and exit
+
 
     # Main loop
     while (True):  # Keep checking for games
@@ -664,21 +678,6 @@ def goal_tracker_main():
         # Makes a call to the NHL API to get the game schedule.  
         # Should run this only a few times a day, and then start calling boxscore within 5 minutes of start time
         gameId = current_toronto_game()
-
-        # Use this for debugging to force a specific game to be found
-        #gameId = "2024010006"
-        #start_game()
-        #toronto_is_home = True
-
-
-        # Debugging of the goal scorer API
-        # game_id = '2024010006'  # Replace with the actual game ID
-        # goal_scorer_info = get_goal_scorer(game_id)
-        # if goal_scorer_info:
-        #     print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-        #     print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-        #     print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
-        
 
         if game_today == True:
             if (game_is_live == True):
@@ -715,10 +714,14 @@ if __name__ == "__main__":
     original_stdout = sys.stdout
     original_stderr = sys.stderr
 
-    # Open a file for logging and set sys.stdout to the file
-    log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
-    # Redirect stdout to the file
-    sys.stdout = log_file
+    if DEBUGMODE:
+        log_file = sys.stdout
+    else:
+        # Open a file for logging and set sys.stdout to the file
+        log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
+        # Redirect stdout to the file
+        sys.stdout = log_file
+
     # Reconfigure stdout for immediate flushing
     sys.stdout.reconfigure(line_buffering=True)
 
