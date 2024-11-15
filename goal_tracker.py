@@ -77,7 +77,7 @@ TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = True
 
-#SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
+SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
 SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
 
@@ -173,7 +173,11 @@ def play_sounds(sound_files):
         print(f"Current Volume: {sonos.volume}")
         print(f"Playing sounds: {sound_files}")
         original_volume = sonos.volume
-        sonos.volume = 50
+
+        if DEBUGMODE == True:
+            sonos.volume = 15
+        else:
+            sonos.volume = 50
 
         for sound_file in sound_files:
             print(f"Sound parameter: {sound_file}")
@@ -272,6 +276,20 @@ def get_play_by_play_data(gameId, debug=False):
             return None
 
 
+#
+#  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal.  Return the list of names
+#  
+#  Either the event isn't created at the same time that the score is updated, or the names don't get updated in the event or
+#  the a new event is created with the names.  Not sure...  
+
+#  TODO:  Need to test this with a live game to see how it works.  Will need to keep checking, but in the right order.
+#  Note that there is a sortOrder field in the event data that could be used to sort the events in the right order.
+#  Perhaps what I should do is get the event, check that it's within the last few minutes, and the continuously refresh
+#  the data for this event until the names are updated.  The problem is there is no timestamp on the event data, but there is
+#  time in period.  clock.timeRemaining might be the baseline to calculate against, but need to capture it when the goal is
+#  scored and before they refresh.
+#  
+#
 def get_goal_scorer(gameId, debug=False):
     try:
         while True:
@@ -308,53 +326,6 @@ def get_goal_scorer(gameId, debug=False):
     
     return None
 
-
-#
-#  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal.  Return the list of names
-#  
-#  Either the event isn't created at the same time that the score is updated, or the names don't get updated in the event or
-#  the a new event is created with the names.  Not sure...  
-
-#  TODO:  Need to test this with a live game to see how it works.  Will need to keep checking, but in the right order.
-#  Note that there is a sortOrder field in the event data that could be used to sort the events in the right order.
-#  Perhaps what I should do is get the event, check that it's within the last few minutes, and the continuously refresh
-#  the data for this event until the names are updated.  The problem is there is no timestamp on the event data, but there is
-#  time in period.  clock.timeRemaining might be the baseline to calculate against, but need to capture it when the goal is
-#  scored and before they refresh.
-#  
-#
-def get_goal_scorer(gameId):
-    try:
-        while True:
-            data = get_play_by_play_data(gameId, False)
-            events = data.get('plays', [])
-            print(f"Looking for goal scorer info...")
-            
-            # Sort events based on sortOrder field
-            events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
-            
-            for event in events:
-                if event.get('typeCode') == 505:  # Goal event
-                    scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
-                    if scoring_team_id == TORONTO_TEAM_ID:
-                        scoring_player_id = event.get('details', {}).get('scoringPlayerId')
-                        if scoring_player_id:  # Check if scoringPlayerId is populated
-                            assist1_player_id = event.get('details', {}).get('assist1PlayerId')
-                            assist2_player_id = event.get('details', {}).get('assist2PlayerId')
-                            
-                            return {
-                                'scoringPlayerID': scoring_player_id,
-                                'assist1PlayerID': assist1_player_id,
-                                'assist2PlayerID': assist2_player_id
-                            }
-            time.sleep(5)  # Check every 5 seconds
-
-    except KeyError as e:
-        print(f"Key error while parsing data: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    
-    return None
 
 
 #
@@ -422,7 +393,7 @@ def check_scores(data, gameId):
 
             time.sleep(5)  # not sure how long we need to wait
 
-            goal_scorer_info = get_goal_scorer(gameId)  # This will loop until it finds the goal scorer info
+            goal_scorer_info = get_goal_scorer(gameId, False)  # This will loop until it finds the goal scorer info
             if goal_scorer_info:
                 print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
                 print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
@@ -620,7 +591,9 @@ def start_game():
     opponent_score = 0
 
     print(f"Game has started!\n")
-    play_sounds(SOUND_GAME_START_FILE)
+
+    if DEBUGMODE == False:
+        play_sounds(SOUND_GAME_START_FILE)
 
 
 
@@ -653,6 +626,7 @@ def goal_tracker_main():
 
     if (debug_mode == True):
         print(f"Debug mode is on\n")
+        SONOS_IP = SONOS_OFFICE_IP
         #play_sounds(SOUND_GAME_START_FILE)
         #time.sleep(5)
         #activate_goal_light(1)
@@ -663,7 +637,7 @@ def goal_tracker_main():
         toronto_is_home = True
         get_play_by_play_data(gameId, True)
 
-        goal_scorer_info = get_goal_scorer(game_id)
+        goal_scorer_info = get_goal_scorer(gameId)
         if goal_scorer_info:
             print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
             print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
