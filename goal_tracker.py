@@ -239,24 +239,73 @@ def get_boxscore_data(gameId):
 #
 # Pull the play-by-play data from the API and do some parsing
 #
-def get_play_by_play_data(gameId):
+def get_play_by_play_data(gameId, debug=False):
     global game_is_live
+    debug_file="play_by_play_debug.json"
     
-    endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
-    print(f"== Play-by-play data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    data = get_apiweb_nhl_data(endpoint)
-    if data:
-        game_state = data.get('gameState')
-        if game_state == 'OFF':  # should I count CRIT as live?
-            # mark the game as ended
-            print(f"Game is no longer live.  gameState: {game_state}\n")  
-            game_is_live = False
-
-            # If we want to do something when the game ends, we can do it here
-
-        return data
+    if debug:
+        print(f"== Debug mode: Reading play-by-play data from {debug_file} ==")
+        try:
+            with open(debug_file, 'r') as file:
+                data = json.load(file)
+                return data
+        except Exception as e:
+            print(f"Failed to read debug file: {e}")
+            return None
     else:
-        print("Failed to retrieve data")
+        endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
+        print(f"== Play-by-play data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        data = get_apiweb_nhl_data(endpoint)
+        if data:
+            game_state = data.get('gameState')
+            if game_state == 'OFF':  # should I count CRIT as live?
+                # mark the game as ended
+                print(f"Game is no longer live.  gameState: {game_state}\n")  
+                game_is_live = False
+
+                # If we want to do something when the game ends, we can do it here
+
+            return data
+        else:
+            print("Failed to retrieve data")
+            return None
+
+
+def get_goal_scorer(gameId, debug=False):
+    try:
+        while True:
+            data = get_play_by_play_data(gameId, debug)
+            if not data:
+                return None
+
+            events = data.get('plays', [])
+            print(f"Looking for goal scorer info...")
+            
+            # Sort events based on sortOrder field
+            events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
+            
+            for event in events:
+                if event.get('typeCode') == 505:  # Goal event
+                    scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
+                    if scoring_team_id == TORONTO_TEAM_ID:
+                        scoring_player_id = event.get('details', {}).get('scoringPlayerId')
+                        if scoring_player_id:  # Check if scoringPlayerId is populated
+                            assist1_player_id = event.get('details', {}).get('assist1PlayerId')
+                            assist2_player_id = event.get('details', {}).get('assist2PlayerId')
+                            
+                            return {
+                                'scoringPlayerID': scoring_player_id,
+                                'assist1PlayerID': assist1_player_id,
+                                'assist2PlayerID': assist2_player_id
+                            }
+            time.sleep(5)  # Check every 5 seconds
+
+    except KeyError as e:
+        print(f"Key error while parsing data: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    
+    return None
 
 
 #
@@ -276,7 +325,7 @@ def get_play_by_play_data(gameId):
 def get_goal_scorer(gameId):
     try:
         while True:
-            data = get_play_by_play_data(gameId)
+            data = get_play_by_play_data(gameId, False)
             events = data.get('plays', [])
             print(f"Looking for goal scorer info...")
             
@@ -652,7 +701,7 @@ def goal_tracker_main():
         while (game_is_live == True):
             #boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
             #check_scores(boxscore_data)  # Check the scores for new goals
-            playbyplay_data = get_play_by_play_data(gameId)  # Retrive the current play-by-play data from the API
+            playbyplay_data = get_play_by_play_data(gameId, False)  # Retrive the current play-by-play data from the API
             check_scores(playbyplay_data, gameId)  # Check the scores for new goals
             time.sleep(10) # Check scores every 10 seconds
         
