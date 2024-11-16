@@ -90,7 +90,7 @@ def goal_tracker_main():
         #    "/roster/Marner.mp3",
         #    "/roster/Nylander.mp3"
         #])
-        sounds_to_play = ["/league_sounds/About_to_start.mp3"]
+        sounds_to_play = ["/league/About_to_start.mp3"]
         sounds_to_play.append(f"/league/Started.mp3")
         sounds_to_play.append(f"/league/Canadiens.mp3")       
         sounds_to_play.append("/league/Versus.mp3")
