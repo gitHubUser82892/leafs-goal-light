@@ -89,6 +89,7 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 game_is_live = False
 game_about_to_start = False
 toronto_is_home = False
+opponent_team_name = ""
 toronto_score = 0
 opponent_score = 0
 game_today = False
@@ -219,6 +220,8 @@ def play_sounds(sound_files):
 
 #
 # Pull the boxscore data from the API and do some parsing
+#
+# TODO:  Keeping this for now, but it's not being used.  Play-by-play data is more useful
 #
 def get_boxscore_data(gameId):
     global game_is_live
@@ -499,12 +502,29 @@ def get_toronto_roster():
 #
 # Return the gameId if Toronto is playing now or determine if it's about to start
 #
+#
+# The possible states are:
+#   - The start time is in the future
+#   - The start time is in the past AND the gameState is OFF
+#       - The game is about to start
+#       - The game has finished
+#   - The start time is in the past AND the gameState is LIVE
+#
+#  There are other gameStates:  OFF, CRIT, FUT... what else?
+#  	•	FUT: Future – The game is scheduled for a future date and has not started yet.
+#	•	PRE: Pre-Game – The game is about to start, with pre-game activities underway.
+#	•	LIVE: Live – The game is currently in progress.
+#	•	OFF: Off – The game has concluded.
+#	•	PST: Postponed – The game has been postponed to a later date.
+#	•	CAN: Canceled – The game has been canceled and will not be played.#
+#
 def current_toronto_game():
     global game_is_live  # Use the global variable
     global toronto_is_home
     global game_today
     global game_about_to_start
     global wait_time
+    global opponent_team_name
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -530,13 +550,15 @@ def current_toronto_game():
 
                             # Get the opponent team name
                             if home_team_id == TORONTO_TEAM_ID:  
-                                opponent_team_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                                opponent_city_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                                opponent_team_name = game.get('awayTeam', {}).get('name', {}).get('default')
                                 toronto_is_home = True
-                                print(f"Toronto is the home team and playing against {opponent_team_name}")
+                                print(f"Toronto Maple Leafs are the home team and playing against the {opponent_city_name} {opponent_team_name}")
                             else:
                                 toronto_is_home = False
-                                opponent_team_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
-                                print(f"Toronto is the away team and playing against {opponent_team_name}")
+                                opponent_city_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
+                                opponent_team_name = game.get('homeTeam', {}).get('name', {}).get('default')
+                                print(f"Toronto Maple Leafs are the away team and playing against the {opponent_city_name} {opponent_team_name}")
 
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
@@ -547,27 +569,8 @@ def current_toronto_game():
                             print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
-
-#
-# TODO:  Simplify this logic.  The start time will always be about 10-15 minutes before the actual start and when gameState goes LIVE
-# So I could use the start time to trigger the game about to start, and then just check for gameState == LIVE to trigger the game is live.
-#
-# The possible states are:
-#   - The start time is in the future
-#   - The start time is in the past AND the gameState is OFF
-#       - The game is about to start
-#       - The game has finished
-#   - The start time is in the past AND the gameState is LIVE
-#
-#  There are other gameStates:  OFF, CRIT, FUT... what else?
-#  	•	FUT: Future – The game is scheduled for a future date and has not started yet.
-#	•	PRE: Pre-Game – The game is about to start, with pre-game activities underway.
-#	•	LIVE: Live – The game is currently in progress.
-#	•	OFF: Off – The game has concluded.
-#	•	PST: Postponed – The game has been postponed to a later date.
-#	•	CAN: Canceled – The game has been canceled and will not be played.
-#       
-
+ 
+                            # This is all the new logic
                             gameState = game.get('gameState')
                             if gameState == "PRE":  # Another scenario for the game about to start.  Use same logic as below
                                 print(f"Game is about to start!  gameState==PRE  Starting in {str(time_delta).split('.')[0]}")

@@ -83,13 +83,21 @@ def goal_tracker_main():
         print(f"Debug mode is on \n")
         #play_sound(SOUND_GAME_START_FILE)
         #play_sound(SOUND_GOAL_HORN_FILE)
-        play_sounds([
-            "/roster/GoalScoredBy.mp3",
-            "/roster/Knies.mp3",
-            "/roster/Assist.mp3",
-            "/roster/Marner.mp3",
-            "/roster/Nylander.mp3"
-        ])
+        #play_sounds([
+        #    "/roster/GoalScoredBy.mp3",
+        #    "/roster/Knies.mp3",
+        #    "/roster/Assist.mp3",
+        #    "/roster/Marner.mp3",
+        #    "/roster/Nylander.mp3"
+        #])
+        sounds_to_play = ["/league_sounds/About_to_start.mp3"]
+        sounds_to_play.append(f"/league/Started.mp3")
+        sounds_to_play.append(f"/league/Canadiens.mp3")       
+        sounds_to_play.append("/league/Versus.mp3")
+        sounds_to_play.append(f"/league/Maple Leafs.mp3")    
+
+        play_sounds(sounds_to_play)
+
         return # For now, just play the start sound and exit
     
 
