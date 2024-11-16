@@ -43,6 +43,7 @@ PROCESS_NAME = "python3 /home/rmayor/Projects/leafs_goal_light/goal_tracker.py"
 # MP3 directory for leafs goal horn
 MP3_DIR = "/home/rmayor/Projects/leafs_goal_light"
 ROSTER_SOUNDS_DIR = "/home/rmayor/Projects/leafs_goal_light/roster_sounds"
+LEAGUE_SOUNDS_DIR = "/home/rmayor/Projects/leafs_goal_light/league_sounds"
 
 
 
@@ -128,6 +129,25 @@ def serve_roster_mp3(filename):
         print(f"Error sending mp3 file: {e}")
         return "Error serving file", 500
 
+
+#
+# The route to serve any MP3 file in the roster directory
+#
+@app.route('/league/<filename>')
+def serve_league_mp3(filename):
+    try:
+        file_path = os.path.join(LEAGUE_SOUNDS_DIR, filename)
+        print(f"Trying to send file from {file_path}")
+
+        # Check if the file exists in the directory
+        if os.path.exists(file_path):
+            return send_from_directory(LEAGUE_SOUNDS_DIR, filename)
+        else:
+            print(f"File not found: {file_path}")
+            return "File not found", 404
+    except Exception as e:
+        print(f"Error sending mp3 file: {e}")
+        return "Error serving file", 500
 
 #
 # The route to manually invoke the light and sound
