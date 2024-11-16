@@ -549,46 +549,118 @@ def current_toronto_game():
                             print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
 
 #
-# TODO:  Simplify this logic.  The start time will always be about 10-15 minutes before the actual start.  So I could use
-# the start time to trigger the game about to start, and then just check for gameState == LIVE to trigger the game is live.
+# TODO:  Simplify this logic.  The start time will always be about 10-15 minutes before the actual start and when gameState goes LIVE
+# So I could use the start time to trigger the game about to start, and then just check for gameState == LIVE to trigger the game is live.
 #
+# The possible states are:
+#   - The start time is in the future
+#   - The start time is in the past AND the gameState is OFF
+#       - The game is about to start
+#       - The game has finished
+#   - The start time is in the past AND the gameState is LIVE
+#
+#  There are other gameStates:  OFF, CRIT, FUT... what else?
+#  	•	FUT: Future – The game is scheduled for a future date and has not started yet.
+#	•	PRE: Pre-Game – The game is about to start, with pre-game activities underway.
+#	•	LIVE: Live – The game is currently in progress.
+#	•	OFF: Off – The game has concluded.
+#	•	PST: Postponed – The game has been postponed to a later date.
+#	•	CAN: Canceled – The game has been canceled and will not be played.
+#       
 
-                            # Check if the game is live or about to start or will be later in the day
                             gameState = game.get('gameState')
-                            if gameState == 'LIVE':  # Check if the game is live
-                                print(f"Game is LIVE!")
-                                if not game_is_live:  # If the game wasn't already live, then set it as started
-                                    start_game()
+                            if gameState == "PRE":  # Another scenario for the game about to start.  Use same logic as below
+                                print(f"Game is about to start!  gameState==PRE  Starting in {str(time_delta).split('.')[0]}")
+                                if not game_about_to_start:
+                                    game_about_to_start = True
+                                    notify_game_about_to_start("Game about to start!")
                                 return gameId
-                            elif gameState == 'OFF' or time_delta < timedelta(hours=-1):  # If the game already happened today
-                                print(f"Toronto played earlier today")
-                                game_today = False   # Don't check again until tomorrow
-                                game_is_live = False
-                                game_about_to_start = False 
-                                return None
-                            elif time_delta > (- timedelta(minutes=5)) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
-                                print(f"This is an edge case to watch for...")
-                                return None
-                            elif game_about_to_start:
-                                return gameId
-                            elif time_delta > timedelta(minutes=5):
-                                # If it's not live or about to start, then it's later in the day
-                                print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            elif gameState == "FUT":  # Another scenario for the game in the future.  Use same logic as below
+                                print(f"gameState==FUT.  Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
-
-                                if time_delta > timedelta(hours=1):
+                                if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
                                     rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                     wait_time = rounded_time_delta.total_seconds()
                                     print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
                                 else:
-                                    wait_time = 5 * 60
+                                    wait_time = 5 * 60  # If it's less than an hour in the future, then recheck in 5 minutes
                                     print(f"Wait time set to 5 minutes")
+                                return None   
+                            elif time_delta > timedelta(minutes=0):  # Start time is in the future
+                                print(f"Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                game_about_to_start = False
+                                if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
+                                    rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
+                                    wait_time = rounded_time_delta.total_seconds()
+                                    print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                else:
+                                    wait_time = 5 * 60  # If it's less than an hour in the future, then recheck in 5 minutes
+                                    print(f"Wait time set to 5 minutes")
+                                return None                            
+                            elif time_delta < timedelta(hours=-1) and gameState != 'LIVE':   # Start time at least an hour in the past 
+                                print(f"Game started at least an hour ago and is not live. GameState: {gameState}")
+                                game_today = False  # Don't check again until tomorrow
+                                game_is_live = False
+                                game_about_to_start = False
                                 return None
-                            else: 
-                                print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
-                                game_about_to_start = True
-                                notify_game_about_to_start("Game about to start!")
+                            elif time_delta < timedelta(minutes=0) and gameState != 'LIVE':   # Start time in the past and game is OFF
+                                print(f"Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
+                                if not game_about_to_start:
+                                    game_about_to_start = True
+                                    notify_game_about_to_start("Game about to start!")
                                 return gameId
+                            elif gameState == 'LIVE':  # Check if the game is live
+                                print(f"Game is LIVE!")
+                                if not game_is_live:  # If the game wasn't already live, then set it as started
+                                    start_game()
+                                return gameId
+                            elif gameState == 'PST':
+                                print(f"Game has been postponed.  Treat like no game today.  gameState: {gameState}")
+                                return None
+                            elif gameState == 'CAN':
+                                print(f"Game has been cancelled.  Treat like no game today.  gameState: {gameState}")
+                            else:
+                                print(f"Game is in an unknown state.  gameState: {gameState}")
+                                return None
+
+                            #  THIS IS OLD CODE.  I'm going to remove it
+                            if False
+                                # Check if the game is live or about to start or will be later in the day
+                                gameState = game.get('gameState')
+                                if gameState == 'LIVE':  # Check if the game is live
+                                    print(f"Game is LIVE!")
+                                    if not game_is_live:  # If the game wasn't already live, then set it as started
+                                        start_game()
+                                    return gameId
+                                elif gameState == 'OFF' or time_delta < timedelta(hours=-1):  # If the game already happened today
+                                    print(f"Toronto played earlier today")
+                                    game_today = False   # Don't check again until tomorrow
+                                    game_is_live = False
+                                    game_about_to_start = False 
+                                    return None
+                                elif time_delta > (- timedelta(minutes=5)) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
+                                    print(f"This is an edge case to watch for...")
+                                    return None
+                                elif game_about_to_start:
+                                    return gameId
+                                elif time_delta > timedelta(minutes=5):
+                                    # If it's not live or about to start, then it's later in the day
+                                    print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                    game_about_to_start = False
+
+                                    if time_delta > timedelta(hours=1):
+                                        rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
+                                        wait_time = rounded_time_delta.total_seconds()
+                                        print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                    else:
+                                        wait_time = 5 * 60
+                                        print(f"Wait time set to 5 minutes")
+                                    return None
+                                else: 
+                                    print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
+                                    game_about_to_start = True
+                                    notify_game_about_to_start("Game about to start!")
+                                    return gameId
 
                     print(f"No Toronto games today")
                     return None
