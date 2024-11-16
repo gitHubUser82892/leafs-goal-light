@@ -627,7 +627,7 @@ def current_toronto_game():
                                 return None
 
                             #  THIS IS OLD CODE.  I'm going to remove it
-                            if False
+                            if False:
                                 # Check if the game is live or about to start or will be later in the day
                                 gameState = game.get('gameState')
                                 if gameState == 'LIVE':  # Check if the game is live
