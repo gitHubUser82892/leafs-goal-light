@@ -550,14 +550,14 @@ def current_toronto_game():
 
                             # Get the opponent team name
                             if home_team_id == TORONTO_TEAM_ID:  
-                                opponent_city_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
-                                opponent_team_name = game.get('awayTeam', {}).get('name', {}).get('default')
                                 toronto_is_home = True
+                                opponent_city_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
+                                opponent_team_name = game.get('awayTeam', {}).get('commonName', {}).get('default')
                                 print(f"Toronto Maple Leafs are the home team and playing against the {opponent_city_name} {opponent_team_name}")
                             else:
                                 toronto_is_home = False
                                 opponent_city_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
-                                opponent_team_name = game.get('homeTeam', {}).get('name', {}).get('default')
+                                opponent_team_name = game.get('homeTeam', {}).get('commonName', {}).get('default')
                                 print(f"Toronto Maple Leafs are the away team and playing against the {opponent_city_name} {opponent_team_name}")
 
                             # Calculations on the start time and delta from the current time
