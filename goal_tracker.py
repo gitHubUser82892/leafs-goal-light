@@ -177,12 +177,14 @@ def play_sounds(sound_files):
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
-            sonos.volume = 15
+            sonos.volume = 20
         else:
             sonos.volume = 50
 
         for sound_file in sound_files:
+            sound_file = sound_file.replace(" ", "_")  # Replace spaces with underscores.  All files in the directory have underscores
             print(f"Sound parameter: {sound_file}")
+            
             # Play the MP3 file
             MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
             print(f"Attempting to play: {MP3_FILE_URL}")
