@@ -626,45 +626,6 @@ def current_toronto_game():
                                 print(f"Game is in an unknown state.  gameState: {gameState}")
                                 return None
 
-                            #  THIS IS OLD CODE.  I'm going to remove it
-                            if False:
-                                # Check if the game is live or about to start or will be later in the day
-                                gameState = game.get('gameState')
-                                if gameState == 'LIVE':  # Check if the game is live
-                                    print(f"Game is LIVE!")
-                                    if not game_is_live:  # If the game wasn't already live, then set it as started
-                                        start_game()
-                                    return gameId
-                                elif gameState == 'OFF' or time_delta < timedelta(hours=-1):  # If the game already happened today
-                                    print(f"Toronto played earlier today")
-                                    game_today = False   # Don't check again until tomorrow
-                                    game_is_live = False
-                                    game_about_to_start = False 
-                                    return None
-                                elif time_delta > (- timedelta(minutes=5)) and time_delta < timedelta(minutes=0) and not game_about_to_start:  # If it's not started, but it will within 5 minutes
-                                    print(f"This is an edge case to watch for...")
-                                    return None
-                                elif game_about_to_start:
-                                    return gameId
-                                elif time_delta > timedelta(minutes=5):
-                                    # If it's not live or about to start, then it's later in the day
-                                    print(f"Game is starting later today {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                                    game_about_to_start = False
-
-                                    if time_delta > timedelta(hours=1):
-                                        rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
-                                        wait_time = rounded_time_delta.total_seconds()
-                                        print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
-                                    else:
-                                        wait_time = 5 * 60
-                                        print(f"Wait time set to 5 minutes")
-                                    return None
-                                else: 
-                                    print(f"Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
-                                    game_about_to_start = True
-                                    notify_game_about_to_start("Game about to start!")
-                                    return gameId
-
                     print(f"No Toronto games today")
                     return None
                 else:
