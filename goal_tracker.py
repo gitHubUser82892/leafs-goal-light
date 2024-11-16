@@ -77,11 +77,13 @@ TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
 
+# Make sure to only use local network IPs here
 SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
 SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
 
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
+
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
 
@@ -187,7 +189,10 @@ def play_sounds(sound_files):
             # Play the MP3 file
             MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
             print(f"Attempting to play: {MP3_FILE_URL}")
-            sonos.play_uri(MP3_FILE_URL)
+            try:
+                sonos.play_uri(MP3_FILE_URL)
+            except soco.exceptions.SoCoException as e:
+                print(f"Failed to play sound {MP3_FILE_URL} on Sonos: {e}")
 
             # Check the state of the player
             #current_track = sonos.get_current_track_info()
@@ -299,15 +304,28 @@ def get_play_by_play_data(gameId, debug=False):
 #
 def get_goal_scorer(gameId, debug=False):
     global most_recent_goal_event_id
+    retry_count = -1
+    error_count = 0  # Use this so we don't retry forever and get stuck
 
     try:
         while True:
             restart_while_loop = False
+            print(f"get_goal_scorer: Refreshing play-by-play events")
+
+            retry_count += 1
+            if retry_count > 35:  # Try for about 3 minutes
+                print(f"Failed to find goal_scorer info too many times.  Exiting get_goal_scorer()")
+                return None
 
             time.sleep(5)  # Check every 5 seconds
             data = get_play_by_play_data(gameId, debug)
             if not data:
-                return None
+                print(f"Failed to retrieve play-by-play data while trying to get_goal_scorer().  Pausing for 5 seconds and retrying...")
+                error_count += 1
+                if error_count > 5:
+                    print(f"Failed to retrieve play-by-play data too many times.  Exiting get_goal_scorer()")
+                    return None
+                continue
 
             events = data.get('plays', [])
 
@@ -399,9 +417,8 @@ def check_scores(data, gameId):
                 print(f"Away Team (Toronto) Score: {away_team_score}")
         else:
             print("Away Team Score not found")
-        print("\n")
 
-
+        # Check for a goal
         if toronto_is_home:
             if home_team_score > toronto_score:
                 print(f"TORONTO GOAL!\n")
@@ -421,13 +438,10 @@ def check_scores(data, gameId):
             toronto_score = away_team_score
             opponent_score = home_team_score
         
-        # If there was a goal, then activate the goal light and play the goal horn
+        # If there was a goal, then activate the goal light, play the goal horn, and play the scorer and assist names
         if toronto_goal:
             activate_goal_light("TORONTO GOAL!")
             play_sounds(SOUND_GOAL_HORN_FILE)
-            goal_scorer_info = None
-
-            time.sleep(5)  # not sure how long we need to wait
 
             goal_scorer_info = get_goal_scorer(gameId, False)  # This will loop until it finds the goal scorer info
             if goal_scorer_info:
@@ -464,38 +478,43 @@ def check_scores(data, gameId):
 #
 def get_toronto_roster():
     print(f"Retrieving roster data...")
-
+    roster = {}
     endpoint = "v1/roster/TOR/20242025"
-    data = get_apiweb_nhl_data(endpoint)
+
+    try:
+        data = get_apiweb_nhl_data(endpoint)
+        
+        if data:           
+            # Process forwards
+            forwards = data.get('forwards', [])
+            for player in forwards:
+                player_id = player.get('id')
+                last_name = player.get('lastName', {}).get('default', '')
+                roster[player_id] = last_name
+            
+            # Process defensemen
+            defensemen = data.get('defensemen', [])
+            for player in defensemen:
+                player_id = player.get('id')
+                last_name = player.get('lastName', {}).get('default', '')
+                roster[player_id] = last_name
+            
+            # Process goalies
+            goalies = data.get('goalies', [])
+            for player in goalies:
+                player_id = player.get('id')
+                last_name = player.get('lastName', {}).get('default', '')
+                roster[player_id] = last_name
+            
+            print(f"Roster data retrieved successfully")
+            return roster
+        else:
+            print(f"Failed to retrieve roster data\n")
     
-    if data:
-        roster = {}
-        
-        # Process forwards
-        forwards = data.get('forwards', [])
-        for player in forwards:
-            player_id = player.get('id')
-            last_name = player.get('lastName', {}).get('default', '')
-            roster[player_id] = last_name
-        
-        # Process defensemen
-        defensemen = data.get('defensemen', [])
-        for player in defensemen:
-            player_id = player.get('id')
-            last_name = player.get('lastName', {}).get('default', '')
-            roster[player_id] = last_name
-        
-        # Process goalies
-        goalies = data.get('goalies', [])
-        for player in goalies:
-            player_id = player.get('id')
-            last_name = player.get('lastName', {}).get('default', '')
-            roster[player_id] = last_name
-        
-        print(f"Roster data retrieved successfully")
-        return roster
-    else:
-        print(f"Failed to retrieve roster data\n")
+    except KeyError as e:
+        print(f"Key error while parsing roster data: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred while retrieving roster data: {e}")
     
     return None
 
@@ -574,13 +593,14 @@ def current_toronto_game():
                             #  Logic to determine the state of the game
                             #
                             gameState = game.get('gameState')
+                            print(f"Game State: {gameState}")
                             if gameState == 'PRE':  # Another scenario for the game about to start.  Use same logic as below
-                                print(f"Game is about to start!  gameState==PRE  Starting in {str(time_delta).split('.')[0]}")
+                                print(f"PRE  Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
                                     game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'FUT':  # Another scenario for the game in the future.  Use same logic as below
-                                print(f"gameState==FUT.  Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                print(f"FUT. Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
                                     rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
@@ -602,13 +622,13 @@ def current_toronto_game():
                                     print(f"Wait time set to 5 minutes")
                                 return None                            
                             elif time_delta < timedelta(hours=-1) and gameState != 'LIVE':   # Start time at least an hour in the past 
-                                print(f"Game started at least an hour ago and is not live. GameState: {gameState}")
+                                print(f"!LIVE  Game started at least an hour ago and is not live. GameState: {gameState}")
                                 game_today = False  # Don't check again until tomorrow
                                 game_is_live = False
                                 game_about_to_start = False
                                 return None
                             elif time_delta < timedelta(minutes=0) and gameState != 'LIVE':   # Start time in the past and game is OFF
-                                print(f"Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
+                                print(f"!LIVE  Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
                                     game_about_to_start(opponent_team_name)
                                 return gameId
@@ -647,22 +667,25 @@ def current_toronto_game():
 def game_about_to_start(opponent_team_name):
     global game_about_to_start
 
-    game_about_to_start = True
-    print(f"Game is about to start!\n")
+    try:
+        game_about_to_start = True
+        print(f"Game is about to start!\n")
 
-    notify_game_about_to_start("Game about to start!")
+        notify_game_about_to_start("Game about to start!")
 
-    sounds_to_play = ["/league/About_to_start.mp3"]
-    if toronto_is_home:
-        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
-        sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-    else:
-        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-        sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
-        
-    play_sounds(sounds_to_play)
+        sounds_to_play = ["/league/About_to_start.mp3"]
+        if toronto_is_home:
+            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+            sounds_to_play.append(f"/league/Versus.mp3")
+            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+        else:
+            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+            sounds_to_play.append(f"/league/Versus.mp3")
+            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+            
+        play_sounds(sounds_to_play)
+    except Exception as e:
+        print(f"An error occurred in game_about_to_start: {e}")
 
 
 
@@ -675,25 +698,30 @@ def start_game(opponent_team_name):
     global toronto_score
     global opponent_score
     global toronto_is_home
+    global most_recent_goal_event_id
 
-    game_is_live = True
-    game_about_to_start = False
-    toronto_score = 0
-    opponent_score = 0
+    try:
+        game_is_live = True
+        game_about_to_start = False
+        toronto_score = 0
+        opponent_score = 0
+        most_recent_goal_event_id = 0
 
-    print(f"Game has started!\n")
+        print(f"Game has started!\n")
 
-    sounds_to_play = ["/league/Started.mp3"]
-    if toronto_is_home:
-        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
-        sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-    else:
-        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-        sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+        sounds_to_play = ["/league/Started.mp3"]
+        if toronto_is_home:
+            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+            sounds_to_play.append(f"/league/Versus.mp3")
+            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+        else:
+            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+            sounds_to_play.append(f"/league/Versus.mp3")
+            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
 
-    play_sounds(sounds_to_play)
+        play_sounds(sounds_to_play)
+    except Exception as e:
+        print(f"An error occurred in start_game: {e}")
 
 
 
@@ -757,23 +785,28 @@ def goal_tracker_main():
                 print(f"Game about to start!  Waiting 20 seconds...\n")
                 time.sleep(20)  # Check every 20 seconds if the game is about to start
             else: 
+                # Round down to the nearest hour and wait until then to check the game again
                 hours, remainder = divmod(wait_time, 3600)
                 minutes, _ = divmod(remainder, 60)
                 next_check_time = datetime.now(pytz.timezone('US/Eastern')) + timedelta(seconds=wait_time)
                 print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes... until {next_check_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 time.sleep(wait_time) 
-                wait_time = DEFAULT_WAIT_TIME  # Set the wait time to 5 minutes for next time
+                wait_time = DEFAULT_WAIT_TIME  # reset the wait time to 5 minutes for next time
         else:
             print(f"Pausing for 8 hours as there is no game today\n")
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         # Main loop to execute during a live game
         while (game_is_live == True):
-            #boxscore_data = get_boxscore_data(gameId)  # Retrive the current boxscore data from the API
-            #check_scores(boxscore_data)  # Check the scores for new goals
-            playbyplay_data = get_play_by_play_data(gameId, False)  # Retrive the current play-by-play data from the API
-            check_scores(playbyplay_data, gameId)  # Check the scores for new goals
-            time.sleep(10) # Check scores every 10 seconds
+            try:
+                #boxscore_data = get_boxscore_data(gameId)  # Retrieve the current boxscore data from the API
+                #check_scores(boxscore_data)  # Check the scores for new goals
+                playbyplay_data = get_play_by_play_data(gameId, False)  # Retrieve the current play-by-play data from the API
+                check_scores(playbyplay_data, gameId)  # Check the scores for new goals
+                time.sleep(10)  # Check scores every 10 seconds
+            except Exception as e:
+                print(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
+                time.sleep(30)  # Wait for 30 seconds before retrying
         
 
     
