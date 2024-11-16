@@ -94,6 +94,7 @@ opponent_score = 0
 game_today = False
 wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
+most_reecent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
 
 
 
@@ -246,7 +247,7 @@ def get_boxscore_data(gameId):
 #
 def get_play_by_play_data(gameId, debug=False):
     global game_is_live
-    debug_file="play_by_play_debug.json"
+    debug_file="/Users/rmayor/Documents/Projects/NHL API/play-by-play-debug.json"
     
     if debug:
         print(f"== Debug mode: Reading play-by-play data from {debug_file} ==")
@@ -291,33 +292,64 @@ def get_play_by_play_data(gameId, debug=False):
 #  
 #
 def get_goal_scorer(gameId, debug=False):
+    global most_reecent_goal_event_id
+
     try:
         while True:
+            restart_while_loop = False
+
+            time.sleep(5)  # Check every 5 seconds
             data = get_play_by_play_data(gameId, debug)
             if not data:
                 return None
 
             events = data.get('plays', [])
-            print(f"Looking for goal scorer info...")
+
+            if debug == True:
+                print(f"Looking for goal scorer info")
             
             # Sort events based on sortOrder field
             events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
             
             for event in events:
+                if debug == True:
+                    print(f"Event: {event.get('eventId')} sortOrder: {event.get('sortOrder')}")
+                    
                 if event.get('typeCode') == 505:  # Goal event
+                    if debug == True:
+                        print(f"   Goal event found.  TypeCode: {event.get('typeCode')}")
+
                     scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
+                    if scoring_team_id == None:
+                        print(f"   Found the goal event, but there are no details or not eventOwnerTeamId yet.  Wait for data to populate and retry...")
+                        restart_while_loop = True
+                        break  # Break out of the for loop and retry the while loop
+
                     if scoring_team_id == TORONTO_TEAM_ID:
+                        if most_reecent_goal_event_id == event.get('eventId'):
+                            print(f"   Found the goal event, but it's the same as the most recent goal event.  Wait for data to populate and retry...")
+                            restart_while_loop = True
+                            break
+
                         scoring_player_id = event.get('details', {}).get('scoringPlayerId')
                         if scoring_player_id:  # Check if scoringPlayerId is populated
+
                             assist1_player_id = event.get('details', {}).get('assist1PlayerId')
                             assist2_player_id = event.get('details', {}).get('assist2PlayerId')
                             
+                            most_reecent_goal_event_id = event.get('eventId')
+
                             return {
                                 'scoringPlayerID': scoring_player_id,
                                 'assist1PlayerID': assist1_player_id,
                                 'assist2PlayerID': assist2_player_id
                             }
-            time.sleep(5)  # Check every 5 seconds
+                        else:
+                            print(f"   Found the goal event, but there is no scoringPlayerId yet.  Wait for data to populate and retry...")
+                            restart_while_loop = True
+                            break  # Break out of the for loop and retry the while loop
+            if restart_while_loop:
+                continue  # Restart the while loop
 
     except KeyError as e:
         print(f"Key error while parsing data: {e}")
@@ -395,9 +427,9 @@ def check_scores(data, gameId):
 
             goal_scorer_info = get_goal_scorer(gameId, False)  # This will loop until it finds the goal scorer info
             if goal_scorer_info:
-                print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-                print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-                print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+                print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+                print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+                print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
                 sounds_to_play = ["/roster/GoalScoredBy.mp3"]
                 if goal_scorer_info['scoringPlayerID'] in roster:
@@ -412,7 +444,7 @@ def check_scores(data, gameId):
                 
                 play_sounds(sounds_to_play)
             else:
-                print(f"Failed to retrieve goal scorer information, retrying...\n")
+                print(f"Failed to retrieve goal scorer information.\n")
 
 
     except KeyError as e:
@@ -427,6 +459,8 @@ def check_scores(data, gameId):
 # Get the roster data for the Toronto Maple Leafs
 #
 def get_toronto_roster():
+    print(f"Retrieving roster data...")
+
     endpoint = "v1/roster/TOR/20242025"
     data = get_apiweb_nhl_data(endpoint)
     
@@ -454,6 +488,7 @@ def get_toronto_roster():
             last_name = player.get('lastName', {}).get('default', '')
             roster[player_id] = last_name
         
+        print(f"Roster data retrieved successfully")
         return roster
     else:
         print(f"Failed to retrieve roster data\n")
@@ -618,14 +653,12 @@ def goal_tracker_main():
 
 
     # Start by getting the roster data and parsing it so we just have the player id and name
-    print(f"Retrieving roster data...")
-    roster = get_toronto_roster()
-    if roster:
-        print(f"Roster data retrieved successfully")
+
+    roster = get_toronto_roster() 
     time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
 
     if (debug_mode == True):
-        print(f"Debug mode is on\n")
+        print(f"== Debug mode is on\n")
         SONOS_IP = SONOS_OFFICE_IP
         #play_sounds(SOUND_GAME_START_FILE)
         #time.sleep(5)
@@ -635,13 +668,12 @@ def goal_tracker_main():
         gameId = "2024010006"
         start_game()
         toronto_is_home = True
-        get_play_by_play_data(gameId, True)
 
-        goal_scorer_info = get_goal_scorer(gameId)
+        goal_scorer_info = get_goal_scorer(gameId, debug_mode)
         if goal_scorer_info:
-            print(f"Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-            print(f"Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-            print(f"Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+            print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+            print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+            print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
         return # For now, just play the start sound and exit
 

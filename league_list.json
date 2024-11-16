@@ -1,0 +1,37 @@
+# 
+# NHL League teams with their respective team IDs
+#
+[
+  {"teamId": 1, "teamName": "New Jersey Devils"},
+  {"teamId": 2, "teamName": "New York Islanders"},
+  {"teamId": 3, "teamName": "New York Rangers"},
+  {"teamId": 4, "teamName": "Philadelphia Flyers"},
+  {"teamId": 5, "teamName": "Pittsburgh Penguins"},
+  {"teamId": 6, "teamName": "Boston Bruins"},
+  {"teamId": 7, "teamName": "Buffalo Sabres"},
+  {"teamId": 8, "teamName": "Montreal Canadiens"},
+  {"teamId": 9, "teamName": "Ottawa Senators"},
+  {"teamId": 10, "teamName": "Toronto Maple Leafs"},
+  {"teamId": 12, "teamName": "Carolina Hurricanes"},
+  {"teamId": 13, "teamName": "Florida Panthers"},
+  {"teamId": 14, "teamName": "Tampa Bay Lightning"},
+  {"teamId": 15, "teamName": "Washington Capitals"},
+  {"teamId": 16, "teamName": "Chicago Blackhawks"},
+  {"teamId": 17, "teamName": "Detroit Red Wings"},
+  {"teamId": 18, "teamName": "Nashville Predators"},
+  {"teamId": 19, "teamName": "St. Louis Blues"},
+  {"teamId": 20, "teamName": "Calgary Flames"},
+  {"teamId": 21, "teamName": "Colorado Avalanche"},
+  {"teamId": 22, "teamName": "Edmonton Oilers"},
+  {"teamId": 23, "teamName": "Vancouver Canucks"},
+  {"teamId": 24, "teamName": "Anaheim Ducks"},
+  {"teamId": 25, "teamName": "Dallas Stars"},
+  {"teamId": 26, "teamName": "Los Angeles Kings"},
+  {"teamId": 28, "teamName": "San Jose Sharks"},
+  {"teamId": 29, "teamName": "Columbus Blue Jackets"},
+  {"teamId": 30, "teamName": "Minnesota Wild"},
+  {"teamId": 52, "teamName": "Winnipeg Jets"},
+  {"teamId": 53, "teamName": "Arizona Coyotes"},
+  {"teamId": 54, "teamName": "Vegas Golden Knights"},
+  {"teamId": 55, "teamName": "Seattle Kraken"}
+]
