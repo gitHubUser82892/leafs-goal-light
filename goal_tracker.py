@@ -654,13 +654,13 @@ def game_about_to_start(opponent_team_name):
 
     sounds_to_play = ["/league/About_to_start.mp3"]
     if toronto_is_home:
-        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
         sounds_to_play.append("/league/Versus.mp3")
         sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
     else:
         sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
         sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
         
     play_sounds(sounds_to_play)
 
@@ -685,13 +685,13 @@ def start_game(opponent_team_name):
 
     sounds_to_play = ["/league/Started.mp3"]
     if toronto_is_home:
-        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
         sounds_to_play.append("/league/Versus.mp3")
         sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
     else:
         sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
         sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
 
     play_sounds(sounds_to_play)
 
