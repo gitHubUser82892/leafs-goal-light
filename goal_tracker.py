@@ -75,7 +75,7 @@ TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
-DEBUGMODE = True
+DEBUGMODE = False
 
 SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
@@ -279,17 +279,19 @@ def get_play_by_play_data(gameId, debug=False):
 
 #
 #  Get the goal scorer and assists data from the play-by-play API for the most recent Toronto goal.  Return the list of names
+#
+#  Need to ensure that the event we've found is the most recent goal event and not the same as the last one we found.
+#  Use the sortOrder field in the event, but also store and check against the last goal we successfully found.
+#
 #  
-#  Either the event isn't created at the same time that the score is updated, or the names don't get updated in the event or
-#  the a new event is created with the names.  Not sure...  
-
-#  TODO:  Need to test this with a live game to see how it works.  Will need to keep checking, but in the right order.
-#  Note that there is a sortOrder field in the event data that could be used to sort the events in the right order.
-#  Perhaps what I should do is get the event, check that it's within the last few minutes, and the continuously refresh
-#  the data for this event until the names are updated.  The problem is there is no timestamp on the event data, but there is
-#  time in period.  clock.timeRemaining might be the baseline to calculate against, but need to capture it when the goal is
-#  scored and before they refresh.
-#  
+#  The event data populates over time, so we need to wait for the data to be populated before we can get the goal scorer info.
+#  There are potentially multiple pieces of data in the event that come in over time, so need to check that it's all available.
+#  Once the goal scorere info is available, we can play the sounds.  Note that if the goal scorer info is there, but the assit
+#  info is not, we can still play the goal scorer info.  It's possible there was no assist, so just proceed at that point to 
+#  play the sounds.
+#
+#  There is a potential issue where a second goal is scored before the data is populated for the first goal.  In this case, we
+#  might have a problem.  
 #
 def get_goal_scorer(gameId, debug=False):
     global most_reecent_goal_event_id
@@ -305,19 +307,16 @@ def get_goal_scorer(gameId, debug=False):
 
             events = data.get('plays', [])
 
-            if debug == True:
-                print(f"Looking for goal scorer info")
+            print(f"Searching events for goal scorer info")
             
             # Sort events based on sortOrder field
             events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
             
             for event in events:
-                if debug == True:
-                    print(f"Event: {event.get('eventId')} sortOrder: {event.get('sortOrder')}")
+                print(f"- Event: {event.get('eventId')} sortOrder: {event.get('sortOrder')}")
                     
                 if event.get('typeCode') == 505:  # Goal event
-                    if debug == True:
-                        print(f"   Goal event found.  TypeCode: {event.get('typeCode')}")
+                    print(f"   Goal event found.  TypeCode: {event.get('typeCode')}")
 
                     scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
                     if scoring_team_id == None:
@@ -333,6 +332,7 @@ def get_goal_scorer(gameId, debug=False):
 
                         scoring_player_id = event.get('details', {}).get('scoringPlayerId')
                         if scoring_player_id:  # Check if scoringPlayerId is populated
+                            print(f"   Found the right goal event with a scoringPlayerId.  ScoringPlayerId: {scoring_player_id}")
 
                             assist1_player_id = event.get('details', {}).get('assist1PlayerId')
                             assist2_player_id = event.get('details', {}).get('assist2PlayerId')
@@ -548,12 +548,6 @@ def current_toronto_game():
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
 
-#
-# Current time: 2024-11-13 19:31:06
-#Start time:   2024-11-13 19:30:00
-#Time until game starts:   -1 day, 23:58:53
-#This is an edge case to watch for...
-#No active game. Waiting 0 hours and 5 minutes... until 2024-11-13 19:36:06
 #
 # TODO:  Simplify this logic.  The start time will always be about 10-15 minutes before the actual start.  So I could use
 # the start time to trigger the game about to start, and then just check for gameState == LIVE to trigger the game is live.
