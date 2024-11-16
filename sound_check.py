@@ -26,7 +26,7 @@ def play_sounds(sound_files):
         print(f"Connected to Sonos Speaker: {sonos.player_name}")
         print(f"Current Volume: {sonos.volume}")
         original_volume = sonos.volume
-        sonos.volume = 15
+        sonos.volume = 20
 
         for sound_file in sound_files:
             # Play the MP3 file
@@ -94,7 +94,7 @@ def goal_tracker_main():
         sounds_to_play.append(f"/league/Started.mp3")
         sounds_to_play.append(f"/league/Canadiens.mp3")       
         sounds_to_play.append("/league/Versus.mp3")
-        sounds_to_play.append(f"/league/Maple Leafs.mp3")    
+        sounds_to_play.append(f"/league/Maple_Leafs.mp3")    
 
         play_sounds(sounds_to_play)
 
