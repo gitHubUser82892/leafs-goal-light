@@ -89,13 +89,12 @@ SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file r
 game_is_live = False
 game_about_to_start = False
 toronto_is_home = False
-opponent_team_name = ""
 toronto_score = 0
 opponent_score = 0
 game_today = False
 wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
-most_reecent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
+most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
 
 
 
@@ -182,9 +181,9 @@ def play_sounds(sound_files):
             sonos.volume = 50
 
         for sound_file in sound_files:
-            sound_file = sound_file.replace(" ", "_")  # Replace spaces with underscores.  All files in the directory have underscores
             print(f"Sound parameter: {sound_file}")
-            
+            sound_file = sound_file.replace(" ", "_")  # Replace spaces with underscores.  All files in the directory have underscores
+
             # Play the MP3 file
             MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
             print(f"Attempting to play: {MP3_FILE_URL}")
@@ -299,7 +298,7 @@ def get_play_by_play_data(gameId, debug=False):
 #  might have a problem.  
 #
 def get_goal_scorer(gameId, debug=False):
-    global most_reecent_goal_event_id
+    global most_recent_goal_event_id
 
     try:
         while True:
@@ -330,7 +329,7 @@ def get_goal_scorer(gameId, debug=False):
                         break  # Break out of the for loop and retry the while loop
 
                     if scoring_team_id == TORONTO_TEAM_ID:
-                        if most_reecent_goal_event_id == event.get('eventId'):
+                        if most_recent_goal_event_id == event.get('eventId'):
                             print(f"   Found the goal event, but it's the same as the most recent goal event.  Wait for data to populate and retry...")
                             restart_while_loop = True
                             break
@@ -342,7 +341,7 @@ def get_goal_scorer(gameId, debug=False):
                             assist1_player_id = event.get('details', {}).get('assist1PlayerId')
                             assist2_player_id = event.get('details', {}).get('assist2PlayerId')
                             
-                            most_reecent_goal_event_id = event.get('eventId')
+                            most_recent_goal_event_id = event.get('eventId')
 
                             return {
                                 'scoringPlayerID': scoring_player_id,
@@ -526,7 +525,6 @@ def current_toronto_game():
     global game_today
     global game_about_to_start
     global wait_time
-    global opponent_team_name
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -572,15 +570,16 @@ def current_toronto_game():
                             print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                             print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
  
-                            # This is all the new logic
+                            # 
+                            #  Logic to determine the state of the game
+                            #
                             gameState = game.get('gameState')
-                            if gameState == "PRE":  # Another scenario for the game about to start.  Use same logic as below
+                            if gameState == 'PRE':  # Another scenario for the game about to start.  Use same logic as below
                                 print(f"Game is about to start!  gameState==PRE  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
-                                    game_about_to_start = True
-                                    notify_game_about_to_start("Game about to start!")
+                                    game_about_to_start(opponent_team_name)
                                 return gameId
-                            elif gameState == "FUT":  # Another scenario for the game in the future.  Use same logic as below
+                            elif gameState == 'FUT':  # Another scenario for the game in the future.  Use same logic as below
                                 print(f"gameState==FUT.  Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
@@ -611,13 +610,12 @@ def current_toronto_game():
                             elif time_delta < timedelta(minutes=0) and gameState != 'LIVE':   # Start time in the past and game is OFF
                                 print(f"Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
-                                    game_about_to_start = True
-                                    notify_game_about_to_start("Game about to start!")
+                                    game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'LIVE':  # Check if the game is live
                                 print(f"Game is LIVE!")
                                 if not game_is_live:  # If the game wasn't already live, then set it as started
-                                    start_game()
+                                    start_game(opponent_team_name)
                                 return gameId
                             elif gameState == 'PST':
                                 print(f"Game has been postponed.  Treat like no game today.  gameState: {gameState}")
@@ -644,13 +642,39 @@ def current_toronto_game():
 
 
 #
+#  Game is about to start
+#
+def game_about_to_start(opponent_team_name):
+    global game_about_to_start
+
+    game_about_to_start = True
+    print(f"Game is about to start!\n")
+
+    notify_game_about_to_start("Game about to start!")
+
+    sounds_to_play = ["/league/About_to_start.mp3"]
+    if toronto_is_home:
+        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append("/league/Versus.mp3")
+        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+    else:
+        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+        sounds_to_play.append("/league/Versus.mp3")
+        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        
+    play_sounds(sounds_to_play)
+
+
+
+#
 # Reset the scores for a game when it starts
 #
-def start_game():
+def start_game(opponent_team_name):
     global game_is_live
     global game_about_to_start
     global toronto_score
     global opponent_score
+    global toronto_is_home
 
     game_is_live = True
     game_about_to_start = False
@@ -659,8 +683,17 @@ def start_game():
 
     print(f"Game has started!\n")
 
-    if DEBUGMODE == False:
-        play_sounds(SOUND_GAME_START_FILE)
+    sounds_to_play = ["/league/Started.mp3"]
+    if toronto_is_home:
+        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+        sounds_to_play.append("/league/Versus.mp3")
+        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+    else:
+        sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+        sounds_to_play.append("/league/Versus.mp3")
+        sounds_to_play.append(f"{/league/{opponent_team_name}.mp3}")
+
+    play_sounds(sounds_to_play)
 
 
 
