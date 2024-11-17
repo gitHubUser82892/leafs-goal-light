@@ -170,17 +170,17 @@ def play_sounds(sound_files):
         sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
         sonos = soco.SoCo(SONOS_IP)
-
-        # Display basic info about the speaker
-        print(f"Connected to Sonos Speaker: {sonos.player_name}")
-        print(f"Current Volume: {sonos.volume}")
-        print(f"Playing sounds: {sound_files}")
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
             sonos.volume = 20
         else:
             sonos.volume = 50
+        
+        # Display basic info about the speaker
+        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+        print(f"Original Volume: {sonos.volume}  New Volume: {sonos.volume}")
+        print(f"Playing sounds: {sound_files}")
 
         for sound_file in sound_files:
             print(f"Sound parameter: {sound_file}")
@@ -200,12 +200,6 @@ def play_sounds(sound_files):
 
             #print(f"Track Info: {current_track}")
             print(f"Current State: {state}")
-
-            # Volume control for debugging
-            if state == "PLAYING":
-                print("Playback started successfully.")
-            else:
-                print(f"Playback did not start. Current state: {state}")
 
             # Check the playback position every few seconds
             while state == "PLAYING" or state == "TRANSITIONING":
