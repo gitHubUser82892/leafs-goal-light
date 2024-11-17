@@ -1,27 +1,42 @@
-#  This is a simple Flask application that listens for webhook notifications
-#  - serves up the files to play the sounds to the sonos speaker
-#  - restart the goal_tracker.py application when a commit is made to the git repo
-#
-#  The application listens on port 5000 and has the following routes:
-#  - /webhook/gitcommit: Listens for POST requests from the webhook
-#  - /files/leafs_game_start.mp3: Serves the game start sound
-#  - /files/leafs_goal_horn.mp3: Serves the goal sound
-#
-#
-#  sudo systemctl restart webhook_listener.service
-#  sudo systemctl status webhook_listener.service
-#  sudo systemctl start webhook_listener.service
-#  sudo systemctl stop webhook_listener.service
-#  sudo systemctl enable webhook_listener.service   To enable a service to start automatically at boot time 
-#  sudo systemctl disable webhook_listener.service   To disable from startign at boot time
-#  sudo journalctl -u webhook_listener.service   To view the logs for a specific service
-#
-#  /etc/systemd/system/webhook_listener.service
-#  sudo systemctl daemon-reload   After changing the service file
-#
-#
-#  If this file cannot be run or loaded, then it cannot be changed without manually rebasing the git repo
-#  Use the following to do so:  git pull --rebase
+"""
+Webhook Listener Service
+========================
+
+This is a simple Flask application that listens for webhook notifications and serves up files to play sounds on a Sonos speaker.
+It also restarts the goal_tracker.py application when a commit is made to the git repository.
+
+Routes:
+-------
+- /webhook/gitcommit: Listens for POST requests from the webhook.
+- /files/leafs_game_start.mp3: Serves the game start sound.
+- /files/leafs_goal_horn.mp3: Serves the goal sound.
+- /roster/<filename>: Serves any MP3 file in the roster directory.
+- /league/<filename>: Serves any MP3 file in the league directory.
+- /webhook/lightandsound: Manually invoke the light and sound.
+
+System Service Management:
+--------------------------
+This application runs as a system service on a Raspberry Pi and can be managed with the following commands:
+- sudo systemctl restart webhook_listener.service
+- sudo systemctl status webhook_listener.service
+- sudo systemctl start webhook_listener.service
+- sudo systemctl stop webhook_listener.service
+- sudo systemctl enable webhook_listener.service   # To enable the service to start automatically at boot time
+- sudo systemctl disable webhook_listener.service  # To disable the service from starting at boot time
+- sudo journalctl -u webhook_listener.service      # To view the logs for the service
+
+Service File Location:
+----------------------
+- /etc/systemd/system/webhook_listener.service
+
+After changing the service file, reload the systemd daemon:
+- sudo systemctl daemon-reload
+
+Manual Git Rebase:
+------------------
+If this file cannot be run or loaded, it cannot be changed without manually rebasing the git repository:
+- git pull --rebase
+"""
 
 
 from flask import Flask, request, jsonify, send_from_directory
