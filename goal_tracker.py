@@ -1,21 +1,3 @@
-# #
-# #
-#
-# Originally by:  gitHubUser82892 
-#
-# Stored in github:  https://github.com/gitHubUser82892/leafs-goal-light
-#
-# TODO
-#    - Test auto-crash recovery of the webhook_listener
-#    - fix the github commit listener in homeassistant
-#    - Use delta_time to figure out how long to sleep
-#
-#
-# Instructions
-#    - To use new sound files:  ffmpeg -i file.wav file.mp3
-#    - webhook_listener running as systemd service
-# #
-# #
 """
 Goal Tracker for Toronto Maple Leafs
 This script tracks the Toronto Maple Leafs' games using the NHL API and triggers actions such as playing sounds on a Sonos speaker and activating a goal light via Home Assistant webhooks.
@@ -591,7 +573,7 @@ def current_toronto_game():
                             if gameState == 'PRE':  # Another scenario for the game about to start.  Use same logic as below
                                 print(f"PRE  Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
-                                    game_about_to_start(opponent_team_name)
+                                    do_game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'FUT':  # Another scenario for the game in the future.  Use same logic as below
                                 print(f"FUT. Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -624,7 +606,7 @@ def current_toronto_game():
                             elif time_delta < timedelta(minutes=0) and gameState != 'LIVE':   # Start time in the past and game is OFF
                                 print(f"!LIVE  Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
-                                    game_about_to_start(opponent_team_name)
+                                    do_game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'LIVE':  # Check if the game is live
                                 print(f"Game is LIVE!")
@@ -658,7 +640,7 @@ def current_toronto_game():
 #
 #  Game is about to start
 #
-def game_about_to_start(opponent_team_name):
+def do_game_about_to_start(opponent_team_name):
     global game_about_to_start
 
     try:
