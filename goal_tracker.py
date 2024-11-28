@@ -62,7 +62,7 @@ DEBUGMODE = False
 # Make sure to only use local network IPs here
 SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
-SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
+SONOS_IP = "192.168.86.36"  # FamilyRoom2 speaker
 
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 
