@@ -816,9 +816,9 @@ if __name__ == "__main__":
     #    log_file = sys.stdout
     #else:
         # Open a file for logging and set sys.stdout to the file
-        log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
+    log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
         # Redirect stdout to the file
-        sys.stdout = log_file
+    sys.stdout = log_file
 
     # Reconfigure stdout for immediate flushing
     sys.stdout.reconfigure(line_buffering=True)
