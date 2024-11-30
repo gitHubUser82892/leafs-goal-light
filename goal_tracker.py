@@ -79,7 +79,7 @@ game_today = False
 wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
 most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
-
+sonos = None # Sonos speaker object
 
 
 #
@@ -151,7 +151,10 @@ def play_sounds(sound_files):
     if isinstance(sound_files, str):
         sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
-        sonos = soco.SoCo(SONOS_IP)
+        #print(f"Connecting to Sonos Speaker: {SONOS_IP}")
+        #sonos = soco.SoCo(SONOS_IP)
+        #print(f"Connected to Sonos Speaker: {sonos.player_name}")
+
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
@@ -160,7 +163,7 @@ def play_sounds(sound_files):
             sonos.volume = 50
         
         # Display basic info about the speaker
-        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+
         print(f"Original Volume: {sonos.volume}  New Volume: {sonos.volume}")
         print(f"Playing sounds: {sound_files}")
 
@@ -711,6 +714,7 @@ def goal_tracker_main():
     global game_today
     global wait_time
     global roster
+    global sonos
 
     game_is_live = False
     game_about_to_start = False
@@ -726,13 +730,27 @@ def goal_tracker_main():
     roster = get_toronto_roster() 
     time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
 
+
+
+    # Connect to the Sonos speaker
+    try:
+        if (debug_mode == True):
+            print(f"== Debug mode is on\n")
+            SONOS_IP = SONOS_OFFICE_IP
+
+        print(f"Connecting to Sonos Speaker: {SONOS_IP}")
+        sonos = soco.SoCo(SONOS_IP)
+        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+
+    except soco.exceptions.SoCoException as e:
+        print(f"Sonos error: {e}")
+    except Exception as e:
+        print(f"Unexpected error connecting to Sonos Speaker: {e}")
+
+
     if (debug_mode == True):
-        print(f"== Debug mode is on\n")
-        SONOS_IP = SONOS_OFFICE_IP
-        #play_sounds(SOUND_GAME_START_FILE)
-        #time.sleep(5)
-        #activate_goal_light(1)
-        #play_sounds(SOUND_GOAL_HORN_FILE)
+        play_sounds(SOUND_GAME_START_FILE)
+        time.sleep(5)
 
         gameId = "2024010006"
         start_game()
@@ -744,8 +762,8 @@ def goal_tracker_main():
             print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
             print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
-        return # For now, just play the start sound and exit
-
+        return # For now, just play the start sound and exit#activate_goal_light(1)
+        #play_sounds(SOUND_GOAL_HORN_FILE)
 
     # Main loop
     while (True):  # Keep checking for games
