@@ -158,7 +158,7 @@ def play_sounds(sound_files):
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
-            sonos.volume = 20
+            sonos.volume = 15
         else:
             sonos.volume = 50
         
@@ -812,9 +812,9 @@ if __name__ == "__main__":
     original_stdout = sys.stdout
     original_stderr = sys.stderr
 
-    if DEBUGMODE:
-        log_file = sys.stdout
-    else:
+    #if DEBUGMODE:
+    #    log_file = sys.stdout
+    #else:
         # Open a file for logging and set sys.stdout to the file
         log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
         # Redirect stdout to the file
