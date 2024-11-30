@@ -149,7 +149,7 @@ def notify_game_about_to_start(message):
 # ])
 def play_sounds(sound_files):
     global sonos
-    
+
     if isinstance(sound_files, str):
         sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
@@ -192,9 +192,10 @@ def play_sounds(sound_files):
             while state == "PLAYING" or state == "TRANSITIONING":
                 #track_position = sonos.get_current_track_info()['position']
                 #print(f"Track Position: {track_position}")
-                time.sleep(0.05)
+                time.sleep(0.02)
                 state = sonos.get_current_transport_info()["current_transport_state"]
                 print(f"Current State: {state}")
+            print(f"Current State: {state}")
 
         sonos.volume = original_volume
 
@@ -756,7 +757,7 @@ def goal_tracker_main():
 
         gameId = "2024010006"
         toronto_is_home = True
-        opponent_team_name = "Montreal Canadiens"
+        opponent_team_name = "Canadiens"
         print(f"Starting game for {opponent_team_name}")
         start_game(opponent_team_name)
         time.sleep(10)
