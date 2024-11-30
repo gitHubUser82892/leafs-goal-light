@@ -57,7 +57,7 @@ TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
-DEBUGMODE = True
+DEBUGMODE = False
 
 # Make sure to only use local network IPs here
 SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
