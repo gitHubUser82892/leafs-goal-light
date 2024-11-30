@@ -749,12 +749,16 @@ def goal_tracker_main():
 
 
     if (debug_mode == True):
-        play_sounds(SOUND_GAME_START_FILE)
-        time.sleep(5)
+        #play_sounds(SOUND_GAME_START_FILE)
+        #time.sleep(5)
 
         gameId = "2024010006"
-        start_game()
         toronto_is_home = True
+        opponent_team_name = "Montreal Canadiens"
+        print(f"Starting game for {opponent_team_name}")
+        start_game()
+        time.sleep(10)
+
 
         goal_scorer_info = get_goal_scorer(gameId, debug_mode)
         if goal_scorer_info:
@@ -764,6 +768,7 @@ def goal_tracker_main():
 
         return # For now, just play the start sound and exit#activate_goal_light(1)
         #play_sounds(SOUND_GOAL_HORN_FILE)
+
 
     # Main loop
     while (True):  # Keep checking for games
