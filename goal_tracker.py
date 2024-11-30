@@ -148,6 +148,8 @@ def notify_game_about_to_start(message):
 #     "/roster/Nylander.mp3"
 # ])
 def play_sounds(sound_files):
+    global sonos
+    
     if isinstance(sound_files, str):
         sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
@@ -756,7 +758,7 @@ def goal_tracker_main():
         toronto_is_home = True
         opponent_team_name = "Montreal Canadiens"
         print(f"Starting game for {opponent_team_name}")
-        start_game()
+        start_game(opponent_team_name)
         time.sleep(10)
 
 
