@@ -60,39 +60,26 @@ _debug_indent_level = 0
 def debug_print(message, indent_change=0):
     """
     Print a debug message with timestamp and proper indentation based on call stack depth.
-    
-    Args:
-        message (str): The debug message to print
-        indent_change (int): How to modify the indentation level:
-            -1: Decrease indent (function exit)
-             0: Keep current indent (default)
-             1: Increase indent (function entry)
-    
-    The function automatically:
-        - Adds timestamps to all messages
-        - Manages indentation based on the call stack
-        - Ensures indentation never goes below 0
-    
-    Example output:
-        [2024-03-20 10:15:00]:   Starting process
-        [2024-03-20 10:15:00]:     Subprocess A running
-        [2024-03-20 10:15:00]:     Subprocess A complete
     """
     global _debug_indent_level
     
-    # Adjust indent level before printing if entering new function
-    if indent_change == 1:
+    # For regular messages (indent_change == 0), add one level of indentation
+    # This ensures messages within decorated functions are properly indented
+    indent_level = _debug_indent_level
+    if indent_change == 0:
+        indent_level += 1
+    elif indent_change == 1:
         _debug_indent_level += 1
+        indent_level = _debug_indent_level
+    elif indent_change == -1:
+        indent_level = _debug_indent_level
+        _debug_indent_level = max(0, _debug_indent_level - 1)
     
     # Create indent string based on current level
-    indent = "  " * _debug_indent_level
+    indent = "  " * max(0, indent_level)
     
     # Print message with timestamp and indentation
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
-    
-    # Adjust indent level after printing if exiting function
-    if indent_change == -1:
-        _debug_indent_level = max(0, _debug_indent_level - 1)
 
 
 
