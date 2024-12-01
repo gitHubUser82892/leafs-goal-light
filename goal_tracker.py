@@ -141,7 +141,7 @@ SONOS_FAMILY_ROOM_IP = "192.168.86.36" # FamilyRoom2 speaker
 SONOS_BEAM_IP = "192.168.86.196"       # Family Room Beam Sonos speaker
 
 # Configuration - these can be changed at runtime
-active_sonos_ip = SONOS_FAMILY_ROOM_IP  # Default speaker, can be changed
+
 
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 
@@ -159,6 +159,7 @@ wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
 most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
 sonos = None # Sonos speaker object
+active_sonos_ip = SONOS_FAMILY_ROOM_IP  # Default speaker, can be changed
 
 
 #
@@ -232,13 +233,13 @@ def notify_game_about_to_start(message):
 # ])
 @function_debug_decorator
 def play_sounds(sound_files):
-    global sonos  # Declare we're using the global variable
+    global sonos, active_sonos_ip  # Add active_sonos_ip to global declaration
 
     debug_print(f"Called with sound_files: {sound_files}")
     if sonos is None:
         debug_print("No connection to Sonos speaker. Attempting to reconnect...")
         try:
-            sonos = soco.SoCo(active_sonos_ip)  # Use active_sonos_ip here
+            sonos = soco.SoCo(active_sonos_ip)
             debug_print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
         except Exception as e:
             debug_print(f"Failed to reconnect to Sonos speaker: {e}")
