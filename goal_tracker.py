@@ -141,17 +141,20 @@ def function_debug_decorator(func):
     return wrapper
 
 
-# Constants
+# Constants - these should never change
 TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
 
-# Make sure to only use local network IPs here
-SONOS_OFFICE_IP = "192.168.86.29"  #  Office:1 Sonos speaker
-#SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
-SONOS_IP = "192.168.86.36"  # FamilyRoom2 speaker
+# Sonos speaker configurations
+SONOS_OFFICE_IP = "192.168.86.29"      # Office:1 Sonos speaker
+SONOS_FAMILY_ROOM_IP = "192.168.86.36" # FamilyRoom2 speaker
+SONOS_BEAM_IP = "192.168.86.196"       # Family Room Beam Sonos speaker
+
+# Configuration - these can be changed at runtime
+active_sonos_ip = SONOS_FAMILY_ROOM_IP  # Default speaker, can be changed
 
 RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
 
@@ -248,7 +251,7 @@ def play_sounds(sound_files):
     if sonos is None:
         debug_print("No connection to Sonos speaker. Attempting to reconnect...")
         try:
-            sonos = soco.SoCo(SONOS_IP)
+            sonos = soco.SoCo(active_sonos_ip)  # Use active_sonos_ip here
             debug_print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
         except Exception as e:
             debug_print(f"Failed to reconnect to Sonos speaker: {e}")
@@ -856,10 +859,10 @@ def goal_tracker_main():
     try:
         if (debug_mode == True):
             debug_print(f"== Debug mode is on\n")
-            SONOS_IP = SONOS_OFFICE_IP
+            active_sonos_ip = SONOS_BEAM_IP
 
-        debug_print(f"Connecting to Sonos Speaker: {SONOS_IP}")
-        sonos = soco.SoCo(SONOS_IP)  # Assign to the global variable
+        debug_print(f"Connecting to Sonos Speaker: {active_sonos_ip}")
+        sonos = soco.SoCo(active_sonos_ip)  # Assign to the global variable
         debug_print(f"Connected to Sonos Speaker: {sonos.player_name}")
 
     except soco.exceptions.SoCoException as e:
