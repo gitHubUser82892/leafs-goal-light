@@ -53,6 +53,94 @@ import soco
 from datetime import datetime
 from datetime import timedelta
 
+# Add these after imports, before constants
+_debug_indent_level = 0
+
+
+def debug_print(message, indent_change=0):
+    """
+    Print a debug message with timestamp and proper indentation based on call stack depth.
+    
+    Args:
+        message (str): The debug message to print
+        indent_change (int): How to modify the indentation level:
+            -1: Decrease indent (function exit)
+             0: Keep current indent (default)
+             1: Increase indent (function entry)
+    
+    The function automatically:
+        - Adds timestamps to all messages
+        - Manages indentation based on the call stack
+        - Ensures indentation never goes below 0
+    
+    Example output:
+        [2024-03-20 10:15:00]:   Starting process
+        [2024-03-20 10:15:00]:     Subprocess A running
+        [2024-03-20 10:15:00]:     Subprocess A complete
+    """
+    global _debug_indent_level
+    
+    # Adjust indent level before printing if entering new function
+    if indent_change == 1:
+        _debug_indent_level += 1
+    
+    # Create indent string based on current level
+    indent = "  " * _debug_indent_level
+    
+    # Print message with timestamp and indentation
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
+    
+    # Adjust indent level after printing if exiting function
+    if indent_change == -1:
+        _debug_indent_level = max(0, _debug_indent_level - 1)
+
+
+
+def function_debug_decorator(func):
+    """
+    Decorator that automatically logs function entry and exit with parameters.
+    
+    This decorator wraps functions to provide automatic debug logging of:
+        - Function entry with all parameters (both positional and keyword)
+        - Function exit
+    
+    The decorator automatically manages indentation levels to show the call stack visually.
+    
+    Args:
+        func: The function to be decorated
+    
+    Returns:
+        wrapper: The wrapped function with added debug logging
+    
+    Example usage:
+        @function_debug_decorator
+        def my_function(param1, param2="default"):
+            pass
+    
+    Example output:
+        [2024-03-20 10:15:00]: Entering my_function(123, param2=default)
+        [2024-03-20 10:15:00]: Exiting my_function()
+    """
+    def wrapper(*args, **kwargs):
+        func_name = func.__name__
+        
+        # Format positional arguments
+        args_str = [str(arg) for arg in args]
+        
+        # Format keyword arguments
+        kwargs_str = [f"{k}={v}" for k, v in kwargs.items()]
+        
+        # Combine all arguments
+        all_args = args_str + kwargs_str
+        params = ", ".join(all_args)
+        
+        debug_print(f"Entering {func_name}({params})", 1)
+        result = func(*args, **kwargs)
+        debug_print(f"Exiting {func_name}()", -1)
+        return result
+    return wrapper
+
+
 # Constants
 TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
@@ -94,6 +182,7 @@ HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "http://homeassistant.local:8123/api
 #
 # This is the direct call to the public NHL API
 #
+@function_debug_decorator
 def get_apiweb_nhl_data(endpoint):
     base_url = "https://api-web.nhle.com/"
     url = f"{base_url}{endpoint}"
@@ -102,10 +191,10 @@ def get_apiweb_nhl_data(endpoint):
         response.raise_for_status()  # Raise an HTTPError for bad responses
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Failed to retrieve data from NHL API: {e}")
+        debug_print(f"Failed to retrieve data from NHL API: {e}")
         return None
     except json.JSONDecodeError as e:
-        print(f"Failed to parse JSON response: {e}")
+        debug_print(f"Failed to parse JSON response: {e}")
         return None
 
 
@@ -113,28 +202,30 @@ def get_apiweb_nhl_data(endpoint):
 #
 # POST to webhook to drive the HomeAssistant automation to turn on goal light
 #
+@function_debug_decorator
 def activate_goal_light(message):
     payload = {"text": message}
-    print(f"Activate goal light: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    debug_print(f"Sending POST request with payload: {payload}")
     try:
         response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-        print(f"Activate goal light: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        debug_print("Successfully sent POST request to webhook")
     except requests.exceptions.RequestException as e:
-        print(f"Activate goal light: Failed to send POST request to webhook: {e} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        debug_print(f"Failed to send POST request to webhook: {e}")
 
 
 #
 # POST to webhook to drive the HomeAssistant automation to send notification that the game is about to start
 #
+@function_debug_decorator
 def notify_game_about_to_start(message):
     payload = {"message": message}
     try:
         response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-        print(f"Notify game about to start: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        debug_print(f"Notify game about to start: Successfully sent POST request to webhook")
     except requests.exceptions.RequestException as e:
-        print(f"Notify game about to start: Failed to send POST request to webhook: {e} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        debug_print(f"Notify game about to start: Failed to send POST request to webhook: {e}")
 
 
 
@@ -149,20 +240,21 @@ def notify_game_about_to_start(message):
 #     "/roster/Marner.mp3",
 #     "/roster/Nylander.mp3"
 # ])
+@function_debug_decorator
 def play_sounds(sound_files):
     global sonos  # Declare we're using the global variable
 
-    print(f"- play_sounds() called for {sound_files} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    debug_print(f"Called with sound_files: {sound_files}")
     if sonos is None:
-        print("No connection to Sonos speaker. Attempting to reconnect...")
+        debug_print("No connection to Sonos speaker. Attempting to reconnect...")
         try:
             sonos = soco.SoCo(SONOS_IP)
-            print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
+            debug_print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
         except Exception as e:
-            print(f"Failed to reconnect to Sonos speaker: {e}")
+            debug_print(f"Failed to reconnect to Sonos speaker: {e}")
             return  # Exit the function if we can't connect
     else:
-        print(f"Already connected to Sonos Speaker: {sonos.player_name}")
+        debug_print(f"Already connected to Sonos Speaker: {sonos.player_name}")
     
     if isinstance(sound_files, str):
         sound_files = [sound_files]  # this ensures that sound_files is always a list
@@ -180,26 +272,26 @@ def play_sounds(sound_files):
         
         # Display basic info about the speaker
 
-        print(f"Original Volume: {sonos.original_volume}  New Volume: {sonos.volume}")
+        debug_print(f"Original Volume: {sonos.original_volume}  New Volume: {sonos.volume}")
 
         for sound_file in sound_files:
-            print(f"Sound parameter: {sound_file}")
+            debug_print(f"Sound parameter: {sound_file}")
             sound_file = sound_file.replace(" ", "_")  # Replace spaces with underscores.  All files in the directory have underscores
 
             # Play the MP3 file
             MP3_FILE_URL = f"http://{RASPPI_IP}{sound_file}"
-            print(f"Attempting to play: {MP3_FILE_URL}")
+            debug_print(f"Attempting to play: {MP3_FILE_URL}")
             try:
                 sonos.play_uri(MP3_FILE_URL)
             except soco.exceptions.SoCoException as e:
-                print(f"Failed to play sound {MP3_FILE_URL} on Sonos: {e}")
+                debug_print(f"Failed to play sound {MP3_FILE_URL} on Sonos: {e}")
 
             # Check the state of the player
             #current_track = sonos.get_current_track_info()
             state = sonos.get_current_transport_info()["current_transport_state"]
 
             #print(f"Track Info: {current_track}")
-            print(f"Current State: {state}")
+            debug_print(f"Current State: {state}")
 
             # Check the playback position every few seconds
             while state == "PLAYING" or state == "TRANSITIONING":
@@ -207,17 +299,17 @@ def play_sounds(sound_files):
                 #print(f"Track Position: {track_position}")
                 time.sleep(0.02)
                 state = sonos.get_current_transport_info()["current_transport_state"]
-                print(f"Current State: {state}")
-            print(f"Current State: {state}")
+                debug_print(f"Current State: {state}")
+            debug_print(f"Current State: {state}")
 
         sonos.volume = original_volume
 
     except soco.exceptions.SoCoException as e:
-        print(f"Sonos error: {e}")
+        debug_print(f"Sonos error: {e}")
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        debug_print(f"Unexpected error: {e}")
 
-    print(f"- play_sounds() completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    debug_print(f"play_sounds() completed")
 
 
 
@@ -226,60 +318,62 @@ def play_sounds(sound_files):
 #
 # TODO:  Keeping this for now, but it's not being used.  Play-by-play data is more useful
 #
+@function_debug_decorator
 def get_boxscore_data(gameId):
     global game_is_live
     
     endpoint = "v1/gamecenter/" + str(gameId) + "/boxscore"
-    print(f"== Boxscore data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    debug_print(f"Boxscore data: {endpoint}")
     data = get_apiweb_nhl_data(endpoint)
     if data:
         
         game_state = data.get('gameState')
         if game_state != 'LIVE':
             # mark the game as ended
-            print(f"Game is no longer live\n")
+            debug_print(f"Game is no longer live\n")
             game_is_live = False
 
             # If we want to do something when the game ends, we can do it here
 
         return data
     else:
-        print("Failed to retrieve data")
+        debug_print("Failed to retrieve data")
 
 
 
 #
 # Pull the play-by-play data from the API and do some parsing
 #
+@function_debug_decorator
 def get_play_by_play_data(gameId, debug=False):
     global game_is_live
     debug_file="/Users/rmayor/Documents/Projects/NHL API/play-by-play-debug.json"
     
     if debug:
-        print(f"== Debug mode: Reading play-by-play data from {debug_file} ==")
+        debug_print(f"Debug mode: Reading play-by-play data from {debug_file}")
         try:
             with open(debug_file, 'r') as file:
                 data = json.load(file)
                 return data
         except Exception as e:
-            print(f"Failed to read debug file: {e}")
+            debug_print(f"Failed to read debug file: {e}")
             return None
     else:
         endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
-        print(f"== Play-by-play data: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        debug_print(f"Play-by-play data: {endpoint}")
         data = get_apiweb_nhl_data(endpoint)
         if data:
             game_state = data.get('gameState')
             if game_state == 'OFF':  # should I count CRIT as live?
                 # mark the game as ended
-                print(f"Game is no longer live.  gameState: {game_state}\n")  
+                debug_print(f"Game is no longer live.  gameState: {game_state}\n")  
                 game_is_live = False
 
                 # If we want to do something when the game ends, we can do it here
 
             return data
         else:
-            print("Failed to retrieve data")
+            debug_print("Failed to retrieve data")
             return None
 
 
@@ -299,59 +393,61 @@ def get_play_by_play_data(gameId, debug=False):
 #  There is a potential issue where a second goal is scored before the data is populated for the first goal.  In this case, we
 #  might have a problem.  
 #
+@function_debug_decorator
 def get_goal_scorer(gameId, debug=False):
     global most_recent_goal_event_id
     retry_count = -1
     error_count = 0  # Use this so we don't retry forever and get stuck
 
+    debug_print(f"Starting goal scorer search for game {gameId}")
     try:
         while True:
             restart_while_loop = False
-            print(f"get_goal_scorer: Refreshing play-by-play events")
+            debug_print(f"get_goal_scorer: Refreshing play-by-play events")
 
             retry_count += 1
             if retry_count > 35:  # Try for about 3 minutes
-                print(f"Failed to find goal_scorer info too many times.  Exiting get_goal_scorer()")
+                debug_print(f"Failed to find goal_scorer info too many times.  Exiting get_goal_scorer()")
                 return None
 
             time.sleep(5)  # Check every 5 seconds
             data = get_play_by_play_data(gameId, debug)
             if not data:
-                print(f"Failed to retrieve play-by-play data while trying to get_goal_scorer().  Pausing for 5 seconds and retrying...")
+                debug_print(f"Failed to retrieve play-by-play data while trying to get_goal_scorer().  Pausing for 5 seconds and retrying...")
                 error_count += 1
                 if error_count > 5:
-                    print(f"Failed to retrieve play-by-play data too many times.  Exiting get_goal_scorer()")
+                    debug_print(f"Failed to retrieve play-by-play data too many times.  Exiting get_goal_scorer()")
                     return None
                 continue
 
             events = data.get('plays', [])
 
-            print(f"Searching events for goal scorer info")
+            debug_print(f"Searching events for goal scorer info")
             
             # Sort events based on sortOrder field
             events.sort(key=lambda x: x.get('sortOrder', 0), reverse=True)
             
             for event in events:
-                print(f"- Event: {event.get('eventId')} sortOrder: {event.get('sortOrder')}")
+                debug_print(f"- Event: {event.get('eventId')} sortOrder: {event.get('sortOrder')}")
                     
                 if event.get('typeCode') == 505:  # Goal event
-                    print(f"   Goal event found.  TypeCode: {event.get('typeCode')}")
+                    debug_print(f"   Goal event found.  TypeCode: {event.get('typeCode')}")
 
                     scoring_team_id = event.get('details', {}).get('eventOwnerTeamId')
                     if scoring_team_id == None:
-                        print(f"   Found the goal event, but there are no details or not eventOwnerTeamId yet.  Wait for data to populate and retry...")
+                        debug_print(f"   Found the goal event, but there are no details or not eventOwnerTeamId yet.  Wait for data to populate and retry...")
                         restart_while_loop = True
                         break  # Break out of the for loop and retry the while loop
 
                     if scoring_team_id == TORONTO_TEAM_ID:
                         if most_recent_goal_event_id == event.get('eventId'):
-                            print(f"   Found the goal event, but it's the same as the most recent goal event.  Wait for data to populate and retry...")
+                            debug_print(f"   Found the goal event, but it's the same as the most recent goal event.  Wait for data to populate and retry...")
                             restart_while_loop = True
                             break
 
                         scoring_player_id = event.get('details', {}).get('scoringPlayerId')
                         if scoring_player_id:  # Check if scoringPlayerId is populated
-                            print(f"   Found the right goal event with a scoringPlayerId.  ScoringPlayerId: {scoring_player_id}")
+                            debug_print(f"   Found the right goal event with a scoringPlayerId.  ScoringPlayerId: {scoring_player_id}")
 
                             assist1_player_id = event.get('details', {}).get('assist1PlayerId')
                             assist2_player_id = event.get('details', {}).get('assist2PlayerId')
@@ -364,16 +460,16 @@ def get_goal_scorer(gameId, debug=False):
                                 'assist2PlayerID': assist2_player_id
                             }
                         else:
-                            print(f"   Found the goal event, but there is no scoringPlayerId yet.  Wait for data to populate and retry...")
+                            debug_print(f"   Found the goal event, but there is no scoringPlayerId yet.  Wait for data to populate and retry...")
                             restart_while_loop = True
                             break  # Break out of the for loop and retry the while loop
             if restart_while_loop:
                 continue  # Restart the while loop
 
     except KeyError as e:
-        print(f"Key error while parsing data: {e}")
+        debug_print(f"Key error while parsing data: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        debug_print(f"An unexpected error occurred: {e}")
     
     return None
 
@@ -382,6 +478,7 @@ def get_goal_scorer(gameId, debug=False):
 #
 # Check the current scores to see if there has been a recent goal
 #
+@function_debug_decorator
 def check_scores(data, gameId):
     global toronto_score
     global opponent_score
@@ -390,6 +487,7 @@ def check_scores(data, gameId):
     away_team_score = 0
     toronto_goal = False
 
+    debug_print("Starting score check")
     try:
         # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
@@ -401,36 +499,36 @@ def check_scores(data, gameId):
         # Print the current scores
         if home_team_score is not None:
             if toronto_is_home == True:
-                print(f"Home Team (Toronto) Score: {home_team_score}")
+                debug_print(f"Home Team (Toronto) Score: {home_team_score}")
             else:
-                print(f"Home Team (Opponent) Score: {home_team_score}")
+                debug_print(f"Home Team (Opponent) Score: {home_team_score}")
         else:
-            print("Home Team Score not found")
+            debug_print("Home Team Score not found")
 
         if away_team_score is not None:
             if toronto_is_home == True:
-                print(f"Away Team (Opponent) Score: {away_team_score}")
+                debug_print(f"Away Team (Opponent) Score: {away_team_score}")
             else:
-                print(f"Away Team (Toronto) Score: {away_team_score}")
+                debug_print(f"Away Team (Toronto) Score: {away_team_score}")
         else:
-            print("Away Team Score not found")
+            debug_print("Away Team Score not found")
 
         # Check for a goal
         if toronto_is_home:
             if home_team_score > toronto_score:
-                print(f"TORONTO GOAL!\n")
+                debug_print(f"TORONTO GOAL!\n")
                 toronto_goal = True
             if away_team_score > opponent_score:
-                print(f"OPPONENT GOAL\n")
+                debug_print(f"OPPONENT GOAL\n")
                 
             toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
             opponent_score = away_team_score
         else:
             if away_team_score > toronto_score:
-                print(f"TORONTO GOAL!\n")
+                debug_print(f"TORONTO GOAL!\n")
                 toronto_goal = True
             if home_team_score > opponent_score:
-                print(f"OPPONENT GOAL\n")
+                debug_print(f"OPPONENT GOAL\n")
 
             toronto_score = away_team_score
             opponent_score = home_team_score
@@ -442,9 +540,9 @@ def check_scores(data, gameId):
 
             goal_scorer_info = get_goal_scorer(gameId, False)  # This will loop until it finds the goal scorer info
             if goal_scorer_info:
-                print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-                print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-                print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+                debug_print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+                debug_print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+                debug_print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
                 sounds_to_play = ["/roster/GoalScoredBy.mp3"]
                 if goal_scorer_info['scoringPlayerID'] in roster:
@@ -459,13 +557,13 @@ def check_scores(data, gameId):
                 
                 play_sounds(sounds_to_play)
             else:
-                print(f"Failed to retrieve goal scorer information.\n")
+                debug_print(f"Failed to retrieve goal scorer information.\n")
 
 
     except KeyError as e:
-        print(f"Key error while checking scores: {e}")
+        debug_print(f"Key error while checking scores: {e}")
     except Exception as e:
-        print(f"Unexpected error while checking scores: {e}")
+        debug_print(f"Unexpected error while checking scores: {e}")
 
     return
 
@@ -473,8 +571,9 @@ def check_scores(data, gameId):
 #
 # Get the roster data for the Toronto Maple Leafs
 #
+@function_debug_decorator
 def get_toronto_roster():
-    print(f"Retrieving roster data...")
+    debug_print(f"Retrieving roster data...")
     roster = {}
     endpoint = "v1/roster/TOR/20242025"
 
@@ -503,15 +602,15 @@ def get_toronto_roster():
                 last_name = player.get('lastName', {}).get('default', '')
                 roster[player_id] = last_name
             
-            print(f"Roster data retrieved successfully")
+            debug_print(f"Roster data retrieved successfully")
             return roster
         else:
-            print(f"Failed to retrieve roster data\n")
+            debug_print(f"Failed to retrieve roster data\n")
     
     except KeyError as e:
-        print(f"Key error while parsing roster data: {e}")
+        debug_print(f"Key error while parsing roster data: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred while retrieving roster data: {e}")
+        debug_print(f"An unexpected error occurred while retrieving roster data: {e}")
     
     return None
 
@@ -535,6 +634,7 @@ def get_toronto_roster():
 #	•	PST: Postponed – The game has been postponed to a later date.
 #	•	CAN: Canceled – The game has been canceled and will not be played.#
 #
+@function_debug_decorator
 def current_toronto_game():
     global game_is_live  # Use the global variable
     global toronto_is_home
@@ -545,7 +645,7 @@ def current_toronto_game():
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
 
-    print(f"== Find next game: " + endpoint + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    debug_print(f"Checking schedule for {today_date}")
 
     data = get_apiweb_nhl_data(endpoint)
     if data:
@@ -562,19 +662,19 @@ def current_toronto_game():
 
                             # Toronto is playing today.  Get the gameId and start time
                             gameId = game.get('id')
-                            print(f"Toronto is playing today with gameId: {gameId}")
+                            debug_print(f"Toronto is playing today with gameId: {gameId}")
 
                             # Get the opponent team name
                             if home_team_id == TORONTO_TEAM_ID:  
                                 toronto_is_home = True
                                 opponent_city_name = game.get('awayTeam', {}).get('placeName', {}).get('default')
                                 opponent_team_name = game.get('awayTeam', {}).get('commonName', {}).get('default')
-                                print(f"Toronto Maple Leafs are the home team and playing against the {opponent_city_name} {opponent_team_name}")
+                                debug_print(f"Toronto Maple Leafs are the home team and playing against the {opponent_city_name} {opponent_team_name}")
                             else:
                                 toronto_is_home = False
                                 opponent_city_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                                 opponent_team_name = game.get('homeTeam', {}).get('commonName', {}).get('default')
-                                print(f"Toronto Maple Leafs are the away team and playing against the {opponent_city_name} {opponent_team_name}")
+                                debug_print(f"Toronto Maple Leafs are the away team and playing against the {opponent_city_name} {opponent_team_name}")
 
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
@@ -582,78 +682,78 @@ def current_toronto_game():
                             current_time = datetime.now(pytz.timezone('US/Eastern'))
                             time_delta = (start_time - current_time)
 
-                            print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-                            print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
+                            debug_print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            debug_print(f"Start time:   {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                            debug_print(f"Time until game starts:   {str(time_delta).split('.')[0]}")
  
                             # 
                             #  Logic to determine the state of the game
                             #
                             gameState = game.get('gameState')
-                            print(f"Game State: {gameState}")
+                            debug_print(f"Game State: {gameState}")
                             if gameState == 'PRE':  # Another scenario for the game about to start.  Use same logic as below
-                                print(f"PRE  Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
+                                debug_print(f"PRE  Game is about to start!  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
                                     do_game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'FUT':  # Another scenario for the game in the future.  Use same logic as below
-                                print(f"FUT. Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                debug_print(f"FUT. Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
                                     rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                     wait_time = rounded_time_delta.total_seconds()
-                                    print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                    debug_print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
                                 else:
                                     wait_time = 5 * 60  # If it's less than an hour in the future, then recheck in 5 minutes
-                                    print(f"Wait time set to 5 minutes")
+                                    debug_print(f"Wait time set to 5 minutes")
                                 return None   
                             elif time_delta > timedelta(minutes=0):  # Start time is in the future
-                                print(f"Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+                                debug_print(f"Game will start in the future at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
                                 game_about_to_start = False
                                 if time_delta > timedelta(hours=1): # If it's more than an hour in the future, then wait hours
                                     rounded_time_delta = timedelta(hours=time_delta.seconds // 3600)
                                     wait_time = rounded_time_delta.total_seconds()
-                                    print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
+                                    debug_print(f"Rounded wait time to the nearest hour: {rounded_time_delta}")
                                 else:
                                     wait_time = 5 * 60  # If it's less than an hour in the future, then recheck in 5 minutes
-                                    print(f"Wait time set to 5 minutes")
+                                    debug_print(f"Wait time set to 5 minutes")
                                 return None                            
                             elif time_delta < timedelta(hours=-1) and gameState != 'LIVE':   # Start time at least an hour in the past 
-                                print(f"!LIVE  Game started at least an hour ago and is not live. GameState: {gameState}")
+                                debug_print(f"!LIVE  Game started at least an hour ago and is not live. GameState: {gameState}")
                                 game_today = False  # Don't check again until tomorrow
                                 game_is_live = False
                                 game_about_to_start = False
                                 return None
                             elif time_delta < timedelta(minutes=0) and gameState != 'LIVE':   # Start time in the past and game is OFF
-                                print(f"!LIVE  Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
+                                debug_print(f"!LIVE  Game is about to start!  Start time in the past and not live.  Starting in {str(time_delta).split('.')[0]}")
                                 if not game_about_to_start:
                                     do_game_about_to_start(opponent_team_name)
                                 return gameId
                             elif gameState == 'LIVE':  # Check if the game is live
-                                print(f"Game is LIVE!")
+                                debug_print(f"Game is LIVE!")
                                 if not game_is_live:  # If the game wasn't already live, then set it as started
                                     start_game(opponent_team_name)
                                 return gameId
                             elif gameState == 'PST':
-                                print(f"Game has been postponed.  Treat like no game today.  gameState: {gameState}")
+                                debug_print(f"Game has been postponed.  Treat like no game today.  gameState: {gameState}")
                                 return None
                             elif gameState == 'CAN':
-                                print(f"Game has been cancelled.  Treat like no game today.  gameState: {gameState}")
+                                debug_print(f"Game has been cancelled.  Treat like no game today.  gameState: {gameState}")
                             else:
-                                print(f"Game is in an unknown state.  gameState: {gameState}")
+                                debug_print(f"Game is in an unknown state.  gameState: {gameState}")
                                 return None
 
-                    print(f"No Toronto games today")
+                    debug_print(f"No Toronto games today")
                     return None
                 else:
-                    print(f"No games today")
+                    debug_print(f"No games today")
                     return None
         except KeyError as e:
-            print(f"Key error while parsing schedule data: {e}")
+            debug_print(f"Key error while parsing schedule data: {e}")
         except Exception as e:
-            print(f"Unexpected error while parsing schedule data: {e}")
+            debug_print(f"Unexpected error while parsing schedule data: {e}")
     else:
-        print("Failed to retrieve data")
+        debug_print("Failed to retrieve data")
     return None
 
 
@@ -661,12 +761,13 @@ def current_toronto_game():
 #
 #  Game is about to start
 #
+@function_debug_decorator
 def do_game_about_to_start(opponent_team_name):
     global game_about_to_start
 
     try:
         game_about_to_start = True
-        print(f"Game is about to start!\n")
+        debug_print(f"Game is about to start!\n")
 
         notify_game_about_to_start("Game about to start!")
 
@@ -682,13 +783,14 @@ def do_game_about_to_start(opponent_team_name):
             
         play_sounds(sounds_to_play)
     except Exception as e:
-        print(f"An error occurred in game_about_to_start: {e}")
+        debug_print(f"An error occurred in game_about_to_start: {e}")
 
 
 
 #
 # Reset the scores for a game when it starts
 #
+@function_debug_decorator
 def start_game(opponent_team_name):
     global game_is_live
     global game_about_to_start
@@ -704,7 +806,7 @@ def start_game(opponent_team_name):
         opponent_score = 0
         most_recent_goal_event_id = 0
 
-        print(f"Game has started!\n")
+        debug_print(f"Game has started!\n")
 
         sounds_to_play = ["/league/Started.mp3"]
         if toronto_is_home:
@@ -718,13 +820,14 @@ def start_game(opponent_team_name):
 
         play_sounds(sounds_to_play)
     except Exception as e:
-        print(f"An error occurred in start_game: {e}")
+        debug_print(f"An error occurred in start_game: {e}")
 
 
 
 #
 # Main function
 #
+@function_debug_decorator
 def goal_tracker_main():
     global game_is_live # Use the global variable
     global game_about_to_start
@@ -752,17 +855,17 @@ def goal_tracker_main():
     # Connect to the Sonos speaker
     try:
         if (debug_mode == True):
-            print(f"== Debug mode is on\n")
+            debug_print(f"== Debug mode is on\n")
             SONOS_IP = SONOS_OFFICE_IP
 
-        print(f"Connecting to Sonos Speaker: {SONOS_IP}")
+        debug_print(f"Connecting to Sonos Speaker: {SONOS_IP}")
         sonos = soco.SoCo(SONOS_IP)  # Assign to the global variable
-        print(f"Connected to Sonos Speaker: {sonos.player_name}")
+        debug_print(f"Connected to Sonos Speaker: {sonos.player_name}")
 
     except soco.exceptions.SoCoException as e:
-        print(f"Sonos error: {e}")
+        debug_print(f"Sonos error: {e}")
     except Exception as e:
-        print(f"Unexpected error connecting to Sonos Speaker: {e}")
+        debug_print(f"Unexpected error connecting to Sonos Speaker: {e}")
 
 
     if (debug_mode == True):
@@ -772,16 +875,16 @@ def goal_tracker_main():
         gameId = "2024010006"
         toronto_is_home = True
         opponent_team_name = "Canadiens"
-        print(f"Starting game for {opponent_team_name}")
+        debug_print(f"Starting game for {opponent_team_name}")
         start_game(opponent_team_name)
         time.sleep(10)
 
 
         goal_scorer_info = get_goal_scorer(gameId, debug_mode)
         if goal_scorer_info:
-            print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
-            print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
-            print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
+            debug_print(f"   Scoring Player ID: {goal_scorer_info['scoringPlayerID']}")
+            debug_print(f"   Assist 1 Player ID: {goal_scorer_info['assist1PlayerID']}")
+            debug_print(f"   Assist 2 Player ID: {goal_scorer_info['assist2PlayerID']}")
 
         return # For now, just play the start sound and exit#activate_goal_light(1)
         #play_sounds(SOUND_GOAL_HORN_FILE)
@@ -796,20 +899,20 @@ def goal_tracker_main():
 
         if game_today == True:
             if (game_is_live == True):
-                print(f"Game has already started\n")
+                debug_print(f"Game has already started\n")
             elif (game_about_to_start == True):
-                print(f"Game about to start!  Waiting 20 seconds...\n")
+                debug_print(f"Game about to start!  Waiting 20 seconds...\n")
                 time.sleep(20)  # Check every 20 seconds if the game is about to start
             else: 
                 # Round down to the nearest hour and wait until then to check the game again
                 hours, remainder = divmod(wait_time, 3600)
                 minutes, _ = divmod(remainder, 60)
                 next_check_time = datetime.now(pytz.timezone('US/Eastern')) + timedelta(seconds=wait_time)
-                print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes... until {next_check_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                debug_print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes... until {next_check_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 time.sleep(wait_time) 
                 wait_time = DEFAULT_WAIT_TIME  # reset the wait time to 5 minutes for next time
         else:
-            print(f"Pausing for 8 hours as there is no game today\n")
+            debug_print(f"Pausing for 8 hours as there is no game today\n")
             time.sleep(60*60*8)  # Pause for 8 hours if there's no game today
 
         # Main loop to execute during a live game
@@ -821,7 +924,7 @@ def goal_tracker_main():
                 check_scores(playbyplay_data, gameId)  # Check the scores for new goals
                 time.sleep(10)  # Check scores every 10 seconds
             except Exception as e:
-                print(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
+                debug_print(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
                 time.sleep(30)  # Wait for 30 seconds before retrying
         
 
@@ -850,9 +953,9 @@ if __name__ == "__main__":
     # Reconfigure stderr for immediate flushing
     sys.stderr.reconfigure(line_buffering=True)
 
-    print(f"***************************************************************************************")
-    print(f"*\n* Starting goal tracker at {datetime.now()}\n*")
-    print(f"***************************************************************************************\n")
+    debug_print(f"***************************************************************************************")
+    debug_print(f"*\n* Starting goal tracker at {datetime.now()}\n*")
+    debug_print(f"***************************************************************************************\n")
 
     goal_tracker_main()
 
