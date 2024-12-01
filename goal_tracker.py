@@ -80,7 +80,7 @@ game_today = False
 wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
 most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
-sonos = None  # Initialize the global variable
+sonos = None # Sonos speaker object
 
 
 #
@@ -115,12 +115,13 @@ def get_apiweb_nhl_data(endpoint):
 #
 def activate_goal_light(message):
     payload = {"text": message}
+    print(f"Activate goal light: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     try:
         response = requests.post(HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT, json=payload)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-        print("Successfully sent POST request to webhook")
+        print(f"Activate goal light: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except requests.exceptions.RequestException as e:
-        print(f"Failed to send POST request to webhook: {e}")
+        print(f"Activate goal light: Failed to send POST request to webhook: {e} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 #
@@ -131,9 +132,9 @@ def notify_game_about_to_start(message):
     try:
         response = requests.post(HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START, json=payload)
         response.raise_for_status()  # Raise an HTTPError for bad responses
-        print("Successfully sent POST request to webhook")
+        print(f"Notify game about to start: Successfully sent POST request to webhook at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except requests.exceptions.RequestException as e:
-        print(f"Failed to send POST request to webhook: {e}")
+        print(f"Notify game about to start: Failed to send POST request to webhook: {e} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 
@@ -151,18 +152,25 @@ def notify_game_about_to_start(message):
 def play_sounds(sound_files):
     global sonos  # Declare we're using the global variable
 
+    print(f"- play_sounds() called for {sound_files} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     if sonos is None:
-        print("Error: No connection to Sonos speaker. Attempting to reconnect...")
+        print("No connection to Sonos speaker. Attempting to reconnect...")
         try:
             sonos = soco.SoCo(SONOS_IP)
             print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
         except Exception as e:
             print(f"Failed to reconnect to Sonos speaker: {e}")
             return  # Exit the function if we can't connect
+    else:
+        print(f"Already connected to Sonos Speaker: {sonos.player_name}")
     
     if isinstance(sound_files, str):
-        sound_files = [sound_files]
+        sound_files = [sound_files]  # this ensures that sound_files is always a list
     try:
+        #print(f"Connecting to Sonos Speaker: {SONOS_IP}")
+        #sonos = soco.SoCo(SONOS_IP)
+        #print(f"Connected to Sonos Speaker: {sonos.player_name}")
+
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
@@ -172,8 +180,7 @@ def play_sounds(sound_files):
         
         # Display basic info about the speaker
 
-        print(f"Original Volume: {sonos.volume}  New Volume: {sonos.volume}")
-        print(f"Playing sounds: {sound_files}")
+        print(f"Original Volume: {sonos.original_volume}  New Volume: {sonos.volume}")
 
         for sound_file in sound_files:
             print(f"Sound parameter: {sound_file}")
@@ -209,6 +216,8 @@ def play_sounds(sound_files):
         print(f"Sonos error: {e}")
     except Exception as e:
         print(f"Unexpected error: {e}")
+
+    print(f"- play_sounds() completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 
@@ -738,7 +747,6 @@ def goal_tracker_main():
 
     roster = get_toronto_roster() 
     time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
-
 
 
     # Connect to the Sonos speaker
