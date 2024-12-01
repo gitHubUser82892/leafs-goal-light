@@ -25,6 +25,7 @@ Global Variables:
     - toronto_score: The current score of the Toronto Maple Leafs.
     - opponent_score: The current score of the opponent team.
     - game_today: Boolean indicating if there is a game today.
+    - sonos: The global Sonos speaker object.
 Functions:
     - get_opponent_team_name(game, home_team_id): Returns the name of the opponent team.
     - get_apiweb_nhl_data(endpoint): Makes a GET request to the NHL API and returns the JSON response.
@@ -79,7 +80,7 @@ game_today = False
 wait_time = 0  # Time to wait before checking the game again
 roster = {}  # Dictionary to store the roster data
 most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
-sonos = None # Sonos speaker object
+sonos = None  # Initialize the global variable
 
 
 #
@@ -148,15 +149,20 @@ def notify_game_about_to_start(message):
 #     "/roster/Nylander.mp3"
 # ])
 def play_sounds(sound_files):
-    global sonos
+    global sonos  # Declare we're using the global variable
 
+    if sonos is None:
+        print("Error: No connection to Sonos speaker. Attempting to reconnect...")
+        try:
+            sonos = soco.SoCo(SONOS_IP)
+            print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
+        except Exception as e:
+            print(f"Failed to reconnect to Sonos speaker: {e}")
+            return  # Exit the function if we can't connect
+    
     if isinstance(sound_files, str):
-        sound_files = [sound_files]  # this ensures that sound_files is always a list
+        sound_files = [sound_files]
     try:
-        #print(f"Connecting to Sonos Speaker: {SONOS_IP}")
-        #sonos = soco.SoCo(SONOS_IP)
-        #print(f"Connected to Sonos Speaker: {sonos.player_name}")
-
         original_volume = sonos.volume
 
         if DEBUGMODE == True:
@@ -742,7 +748,7 @@ def goal_tracker_main():
             SONOS_IP = SONOS_OFFICE_IP
 
         print(f"Connecting to Sonos Speaker: {SONOS_IP}")
-        sonos = soco.SoCo(SONOS_IP)
+        sonos = soco.SoCo(SONOS_IP)  # Assign to the global variable
         print(f"Connected to Sonos Speaker: {sonos.player_name}")
 
     except soco.exceptions.SoCoException as e:
