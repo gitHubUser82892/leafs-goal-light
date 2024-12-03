@@ -263,7 +263,7 @@ def play_sounds(sound_files):
         
         # Display basic info about the speaker
 
-        debug_print(f"Original Volume: {sonos.original_volume}  New Volume: {sonos.volume}")
+        debug_print(f"Original Volume: {original_volume}  New Volume: {sonos.volume}")
 
         for sound_file in sound_files:
             debug_print(f"Sound parameter: {sound_file}")
