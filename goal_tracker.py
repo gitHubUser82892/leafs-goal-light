@@ -87,32 +87,19 @@ def function_debug_decorator(func):
     """
     Decorator that automatically logs function entry and exit with parameters.
     
-    This decorator wraps functions to provide automatic debug logging of:
-        - Function entry with all parameters (both positional and keyword)
-        - Function exit
-    
-    The decorator automatically manages indentation levels to show the call stack visually.
-    
-    Args:
-        func: The function to be decorated
-    
-    Returns:
-        wrapper: The wrapped function with added debug logging
-    
-    Example usage:
-        @function_debug_decorator
-        def my_function(param1, param2="default"):
-            pass
-    
-    Example output:
-        [2024-03-20 10:15:00]: Entering my_function(123, param2=default)
-        [2024-03-20 10:15:00]: Exiting my_function()
+    Special cases:
+        - check_scores(): Skips printing the first parameter (data) due to its large size
     """
     def wrapper(*args, **kwargs):
         func_name = func.__name__
         
-        # Format positional arguments
-        args_str = [str(arg) for arg in args]
+        # Special case for check_scores function
+        if func_name == 'check_scores':
+            # Skip the first argument (data) and only format remaining args
+            args_str = [str(arg) for arg in args[1:]]
+        else:
+            # Format all positional arguments
+            args_str = [str(arg) for arg in args]
         
         # Format keyword arguments
         kwargs_str = [f"{k}={v}" for k, v in kwargs.items()]
@@ -792,24 +779,26 @@ def start_game(opponent_team_name):
 
     try:
         game_is_live = True
-        game_about_to_start = False
         toronto_score = 0
         opponent_score = 0
         most_recent_goal_event_id = 0
 
         debug_print(f"Game has started!\n")
 
-        sounds_to_play = ["/league/Started.mp3"]
-        if toronto_is_home:
-            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
-            sounds_to_play.append(f"/league/Versus.mp3")
-            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-        else:
-            sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
-            sounds_to_play.append(f"/league/Versus.mp3")
-            sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+        if game_about_to_start:  # if we already knew the game was about to start then this is a cold start so play the sounds
+            sounds_to_play = ["/league/Started.mp3"]
+            if toronto_is_home:
+                sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
+                sounds_to_play.append(f"/league/Versus.mp3")
+                sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+            else:
+                sounds_to_play.append(f"/league/Maple_Leafs.mp3") 
+                sounds_to_play.append(f"/league/Versus.mp3")
+                sounds_to_play.append(f"/league/{opponent_team_name}.mp3")
 
-        play_sounds(sounds_to_play)
+            play_sounds(sounds_to_play)
+            game_about_to_start = False
+
     except Exception as e:
         debug_print(f"An error occurred in start_game: {e}")
 
