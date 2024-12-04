@@ -64,11 +64,17 @@ def debug_print(message, indent_change=0):
     """
     global _debug_indent_level
     
+    # Get the caller's frame info to check if it's the main function
+    caller_frame = inspect.currentframe().f_back
+    func_name = caller_frame.f_code.co_name
+    
     # For regular messages (indent_change == 0), add one level of indentation
     # This ensures messages within decorated functions are properly indented
     indent_level = _debug_indent_level
     if indent_change == 0:
-        indent_level += 1
+        # Don't add extra indent for main function
+        if func_name != 'goal_tracker_main':
+            indent_level += 1
     elif indent_change == 1:
         _debug_indent_level += 1
         indent_level = _debug_indent_level
@@ -77,7 +83,7 @@ def debug_print(message, indent_change=0):
         _debug_indent_level = max(0, _debug_indent_level - 1)
     
     # Create indent string based on current level
-    indent = "|" * max(0, indent_level)
+    indent = " | " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
     # Print message with timestamp and indentation
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
@@ -98,7 +104,9 @@ def debug_print_error(message, indent_change=0):
     # Handle indentation similar to debug_print()
     indent_level = _debug_indent_level
     if indent_change == 0:
-        indent_level += 1
+        # Don't add extra indent for main function
+        if func_name != 'goal_tracker_main':
+            indent_level += 1
     elif indent_change == 1:
         _debug_indent_level += 1
         indent_level = _debug_indent_level
@@ -106,10 +114,11 @@ def debug_print_error(message, indent_change=0):
         indent_level = _debug_indent_level
         _debug_indent_level = max(0, _debug_indent_level - 1)
     
-    indent = "  " * max(0, indent_level)
+    # Create indent string based on current level
+    indent = " | " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
     # Print message with timestamp, function name, line number, and indentation
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}:{indent}{message}")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}: {indent}{message}")
 
 
 def function_debug_decorator(func):
