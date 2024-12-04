@@ -83,7 +83,7 @@ def debug_print(message, indent_change=0):
         _debug_indent_level = max(0, _debug_indent_level - 1)
     
     # Create indent string based on current level
-    indent = " | " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
+    indent = "| " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
     # Print message with timestamp and indentation
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
@@ -115,7 +115,7 @@ def debug_print_error(message, indent_change=0):
         _debug_indent_level = max(0, _debug_indent_level - 1)
     
     # Create indent string based on current level
-    indent = " | " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
+    indent = "|  " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
     # Print message with timestamp, function name, line number, and indentation
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}: {indent}{message}")
@@ -881,6 +881,11 @@ def goal_tracker_main():
     active_sonos_ip = SONOS_FAMILY_ROOM_IP
     debug_mode = DEBUGMODE
 
+    debug_print(f"")
+    debug_print(f"***************************************************************************************")
+    debug_print(f"*** Starting goal tracker                                                           ***")
+    debug_print(f"***************************************************************************************")
+    debug_print(f"")
 
     # Start by getting the roster data and parsing it so we just have the player id and name
 
@@ -988,12 +993,6 @@ if __name__ == "__main__":
     sys.stderr = log_file
     # Reconfigure stderr for immediate flushing
     sys.stderr.reconfigure(line_buffering=True)
-
-    debug_print(f"")
-    debug_print(f"***************************************************************************************")
-    debug_print(f"*** Starting goal tracker                                                           ***")
-    debug_print(f"***************************************************************************************")
-    debug_print(f"")
 
     goal_tracker_main()
 
