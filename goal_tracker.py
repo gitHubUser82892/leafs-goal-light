@@ -52,6 +52,7 @@ import sys
 import soco
 from datetime import datetime
 from datetime import timedelta
+import inspect
 
 # Add these after imports, before constants
 _debug_indent_level = 0
@@ -79,16 +80,62 @@ def debug_print(message, indent_change=0):
     indent = "  " * max(0, indent_level)
     
     # Print message with timestamp and indentation
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:{indent}{message}")
 
+
+def debug_print_error(message, indent_change=0):
+    """
+    Print an error debug message with timestamp, function name, line number, and proper indentation.
+    Similar to debug_print() but includes additional context for error tracking.
+    """
+    global _debug_indent_level
+    
+    # Get the caller's frame info
+    caller_frame = inspect.currentframe().f_back
+    func_name = caller_frame.f_code.co_name
+    line_no = caller_frame.f_lineno
+    
+    # Handle indentation similar to debug_print()
+    indent_level = _debug_indent_level
+    if indent_change == 0:
+        indent_level += 1
+    elif indent_change == 1:
+        _debug_indent_level += 1
+        indent_level = _debug_indent_level
+    elif indent_change == -1:
+        indent_level = _debug_indent_level
+        _debug_indent_level = max(0, _debug_indent_level - 1)
+    
+    indent = "  " * max(0, indent_level)
+    
+    # Print message with timestamp, function name, line number, and indentation
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}:{indent}{message}")
 
 
 def function_debug_decorator(func):
     """
     Decorator that automatically logs function entry and exit with parameters.
     
-    Special cases:
-        - check_scores(): Skips printing the first parameter (data) due to its large size
+    This decorator wraps functions to provide automatic debug logging of:
+        - Function entry with all parameters (both positional and keyword)
+        - Function exit
+    
+    The decorator automatically manages indentation levels to show the call stack visually.
+    
+    Args:
+        func: The function to be decorated
+    
+    Returns:
+        wrapper: The wrapped function with added debug logging
+    
+    Example usage:
+        @function_debug_decorator
+        def my_function(param1, param2="default"):
+            pass
+    
+    Example output:
+        [2024-03-20 10:15:00]: Entering my_function(123, param2=default)
+        [2024-03-20 10:15:00]: Exiting my_function()
     """
     def wrapper(*args, **kwargs):
         func_name = func.__name__
@@ -169,10 +216,10 @@ def get_apiweb_nhl_data(endpoint):
         response.raise_for_status()  # Raise an HTTPError for bad responses
         return response.json()
     except requests.exceptions.RequestException as e:
-        debug_print(f"Failed to retrieve data from NHL API: {e}")
+        debug_print_error(f"Failed to retrieve data from NHL API: {e}")
         return None
     except json.JSONDecodeError as e:
-        debug_print(f"Failed to parse JSON response: {e}")
+        debug_print_error(f"Failed to parse JSON response: {e}")
         return None
 
 
@@ -189,7 +236,7 @@ def activate_goal_light(message):
         response.raise_for_status()  # Raise an HTTPError for bad responses
         debug_print("Successfully sent POST request to webhook")
     except requests.exceptions.RequestException as e:
-        debug_print(f"Failed to send POST request to webhook: {e}")
+        debug_print_error(f"Failed to send POST request to webhook: {e}")
 
 
 #
@@ -203,7 +250,7 @@ def notify_game_about_to_start(message):
         response.raise_for_status()  # Raise an HTTPError for bad responses
         debug_print(f"Notify game about to start: Successfully sent POST request to webhook")
     except requests.exceptions.RequestException as e:
-        debug_print(f"Notify game about to start: Failed to send POST request to webhook: {e}")
+        debug_print_error(f"Notify game about to start: Failed to send POST request to webhook: {e}")
 
 
 
@@ -229,7 +276,7 @@ def play_sounds(sound_files):
             sonos = soco.SoCo(active_sonos_ip)
             debug_print(f"Reconnected to Sonos Speaker: {sonos.player_name}")
         except Exception as e:
-            debug_print(f"Failed to reconnect to Sonos speaker: {e}")
+            debug_print_error(f"Failed to reconnect to Sonos speaker: {e}")
             return  # Exit the function if we can't connect
     else:
         debug_print(f"Already connected to Sonos Speaker: {sonos.player_name}")
@@ -262,7 +309,7 @@ def play_sounds(sound_files):
             try:
                 sonos.play_uri(MP3_FILE_URL)
             except soco.exceptions.SoCoException as e:
-                debug_print(f"Failed to play sound {MP3_FILE_URL} on Sonos: {e}")
+                debug_print_error(f"Failed to play sound {MP3_FILE_URL} on Sonos: {e}")
 
             # Check the state of the player
             #current_track = sonos.get_current_track_info()
@@ -283,9 +330,9 @@ def play_sounds(sound_files):
         sonos.volume = original_volume
 
     except soco.exceptions.SoCoException as e:
-        debug_print(f"Sonos error: {e}")
+        debug_print_error(f"Sonos error: {e}")
     except Exception as e:
-        debug_print(f"Unexpected error: {e}")
+        debug_print_error(f"Unexpected error: {e}")
 
     debug_print(f"play_sounds() completed")
 
@@ -315,7 +362,7 @@ def get_boxscore_data(gameId):
 
         return data
     else:
-        debug_print("Failed to retrieve data")
+        debug_print_error("Failed to retrieve data")
 
 
 
@@ -334,7 +381,7 @@ def get_play_by_play_data(gameId, debug=False):
                 data = json.load(file)
                 return data
         except Exception as e:
-            debug_print(f"Failed to read debug file: {e}")
+            debug_print_error(f"Failed to read debug file: {e}")
             return None
     else:
         endpoint = "v1/gamecenter/" + str(gameId) + "/play-by-play"
@@ -351,7 +398,7 @@ def get_play_by_play_data(gameId, debug=False):
 
             return data
         else:
-            debug_print("Failed to retrieve data")
+            debug_print_error("Failed to retrieve data")
             return None
 
 
@@ -445,9 +492,9 @@ def get_goal_scorer(gameId, debug=False):
                 continue  # Restart the while loop
 
     except KeyError as e:
-        debug_print(f"Key error while parsing data: {e}")
+        debug_print_error(f"Key error while parsing data: {e}")
     except Exception as e:
-        debug_print(f"An unexpected error occurred: {e}")
+        debug_print_error(f"An unexpected error occurred: {e}")
     
     return None
 
@@ -481,7 +528,7 @@ def check_scores(data, gameId):
             else:
                 debug_print(f"Home Team (Opponent) Score: {home_team_score}")
         else:
-            debug_print("Home Team Score not found")
+            debug_print_error("Home Team Score not found")
 
         if away_team_score is not None:
             if toronto_is_home == True:
@@ -489,7 +536,7 @@ def check_scores(data, gameId):
             else:
                 debug_print(f"Away Team (Toronto) Score: {away_team_score}")
         else:
-            debug_print("Away Team Score not found")
+            debug_print_error("Away Team Score not found")
 
         # Check for a goal
         if toronto_is_home:
@@ -535,13 +582,13 @@ def check_scores(data, gameId):
                 
                 play_sounds(sounds_to_play)
             else:
-                debug_print(f"Failed to retrieve goal scorer information.\n")
+                debug_print_error(f"Failed to retrieve goal scorer information.\n")
 
 
     except KeyError as e:
-        debug_print(f"Key error while checking scores: {e}")
+        debug_print_error(f"Key error while checking scores: {e}")
     except Exception as e:
-        debug_print(f"Unexpected error while checking scores: {e}")
+        debug_print_error(f"Unexpected error while checking scores: {e}")
 
     return
 
@@ -583,12 +630,12 @@ def get_toronto_roster():
             debug_print(f"Roster data retrieved successfully")
             return roster
         else:
-            debug_print(f"Failed to retrieve roster data\n")
+            debug_print_error(f"Failed to retrieve roster data\n")
     
     except KeyError as e:
-        debug_print(f"Key error while parsing roster data: {e}")
+        debug_print_error(f"Key error while parsing roster data: {e}")
     except Exception as e:
-        debug_print(f"An unexpected error occurred while retrieving roster data: {e}")
+        debug_print_error(f"An unexpected error occurred while retrieving roster data: {e}")
     
     return None
 
@@ -727,11 +774,11 @@ def current_toronto_game():
                     debug_print(f"No games today")
                     return None
         except KeyError as e:
-            debug_print(f"Key error while parsing schedule data: {e}")
+            debug_print_error(f"Key error while parsing schedule data: {e}")
         except Exception as e:
-            debug_print(f"Unexpected error while parsing schedule data: {e}")
+            debug_print_error(f"Unexpected error while parsing schedule data: {e}")
     else:
-        debug_print("Failed to retrieve data")
+        debug_print_error("Failed to retrieve data")
     return None
 
 
@@ -761,7 +808,7 @@ def do_game_about_to_start(opponent_team_name):
             
         play_sounds(sounds_to_play)
     except Exception as e:
-        debug_print(f"An error occurred in game_about_to_start: {e}")
+        debug_print_error(f"An error occurred in game_about_to_start: {e}")
 
 
 
@@ -800,7 +847,7 @@ def start_game(opponent_team_name):
             game_about_to_start = False
 
     except Exception as e:
-        debug_print(f"An error occurred in start_game: {e}")
+        debug_print_error(f"An error occurred in start_game: {e}")
 
 
 
@@ -822,7 +869,7 @@ def goal_tracker_main():
     toronto_is_home = False
     game_today = False 
     wait_time = DEFAULT_WAIT_TIME
-
+    active_sonos_ip = SONOS_FAMILY_ROOM_IP
     debug_mode = DEBUGMODE
 
 
@@ -843,9 +890,9 @@ def goal_tracker_main():
         debug_print(f"Connected to Sonos Speaker: {sonos.player_name}")
 
     except soco.exceptions.SoCoException as e:
-        debug_print(f"Sonos error: {e}")
+        debug_print_error(f"Sonos error: {e}")
     except Exception as e:
-        debug_print(f"Unexpected error connecting to Sonos Speaker: {e}")
+        debug_print_error(f"Unexpected error connecting to Sonos Speaker: {e}")
 
 
     if (debug_mode == True):
@@ -904,7 +951,7 @@ def goal_tracker_main():
                 check_scores(playbyplay_data, gameId)  # Check the scores for new goals
                 time.sleep(10)  # Check scores every 10 seconds
             except Exception as e:
-                debug_print(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
+                debug_print_error(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
                 time.sleep(30)  # Wait for 30 seconds before retrying
         
 
@@ -933,9 +980,11 @@ if __name__ == "__main__":
     # Reconfigure stderr for immediate flushing
     sys.stderr.reconfigure(line_buffering=True)
 
+    debug_print(f"")
     debug_print(f"***************************************************************************************")
-    debug_print(f"*\n* Starting goal tracker at {datetime.now()}\n*")
-    debug_print(f"***************************************************************************************\n")
+    debug_print(f"*** Starting goal tracker                                                           ***")
+    debug_print(f"***************************************************************************************")
+    debug_print(f"")
 
     goal_tracker_main()
 
