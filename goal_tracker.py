@@ -77,10 +77,10 @@ def debug_print(message, indent_change=0):
         _debug_indent_level = max(0, _debug_indent_level - 1)
     
     # Create indent string based on current level
-    indent = "  " * max(0, indent_level)
+    indent = "|" * max(0, indent_level)
     
     # Print message with timestamp and indentation
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]:{indent}{message}")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
 
 
 def debug_print_error(message, indent_change=0):
@@ -155,7 +155,7 @@ def function_debug_decorator(func):
         all_args = args_str + kwargs_str
         params = ", ".join(all_args)
         
-        debug_print(f"Entering {func_name}({params})", 1)
+        debug_print(f"Entering {func_name}( {params} )", 1)
         result = func(*args, **kwargs)
         debug_print(f"Exiting {func_name}()", -1)
         return result
