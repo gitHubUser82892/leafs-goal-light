@@ -177,6 +177,7 @@ HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
+DEFAULT_SOUND_VOLUME = 55
 
 # Sonos speaker configurations
 SONOS_OFFICE_IP = "192.168.86.29"      # Office:1 Sonos speaker
@@ -278,7 +279,6 @@ def notify_game_about_to_start(message):
 def play_sounds(sound_files):
     global sonos, active_sonos_ip  # Add active_sonos_ip to global declaration
 
-    debug_print(f"Called with sound_files: {sound_files}")
     if sonos is None:
         debug_print("No connection to Sonos speaker. Attempting to reconnect...")
         try:
@@ -302,14 +302,13 @@ def play_sounds(sound_files):
         if DEBUGMODE == True:
             sonos.volume = 15
         else:
-            sonos.volume = 50
+            sonos.volume = DEFAULT_SOUND_VOLUME
         
         # Display basic info about the speaker
 
         debug_print(f"Original Volume: {original_volume}  New Volume: {sonos.volume}")
 
         for sound_file in sound_files:
-            debug_print(f"Sound parameter: {sound_file}")
             sound_file = sound_file.replace(" ", "_")  # Replace spaces with underscores.  All files in the directory have underscores
 
             # Play the MP3 file
@@ -521,7 +520,6 @@ def check_scores(data, gameId):
     away_team_score = 0
     toronto_goal = False
 
-    debug_print("Starting score check")
     try:
         # Parse the score data from the data set
         home_team = data.get('homeTeam', {})
@@ -533,7 +531,7 @@ def check_scores(data, gameId):
         # Print the current scores
         if home_team_score is not None:
             if toronto_is_home == True:
-                debug_print(f"Home Team (Toronto) Score: {home_team_score}")
+                debug_print(f"Home Team (Toronto) Score:  {home_team_score}")
             else:
                 debug_print(f"Home Team (Opponent) Score: {home_team_score}")
         else:
@@ -543,26 +541,26 @@ def check_scores(data, gameId):
             if toronto_is_home == True:
                 debug_print(f"Away Team (Opponent) Score: {away_team_score}")
             else:
-                debug_print(f"Away Team (Toronto) Score: {away_team_score}")
+                debug_print(f"Away Team (Toronto) Score:  {away_team_score}")
         else:
             debug_print_error("Away Team Score not found")
 
         # Check for a goal
         if toronto_is_home:
             if home_team_score > toronto_score:
-                debug_print(f"TORONTO GOAL!\n")
+                debug_print(f"*** TORONTO GOAL!")
                 toronto_goal = True
             if away_team_score > opponent_score:
-                debug_print(f"OPPONENT GOAL\n")
+                debug_print(f"*** OPPONENT GOAL")
                 
             toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
             opponent_score = away_team_score
         else:
             if away_team_score > toronto_score:
-                debug_print(f"TORONTO GOAL!\n")
+                debug_print(f"*** TORONTO GOAL!")
                 toronto_goal = True
             if home_team_score > opponent_score:
-                debug_print(f"OPPONENT GOAL\n")
+                debug_print(f"*** OPPONENT GOAL")
 
             toronto_score = away_team_score
             opponent_score = home_team_score
