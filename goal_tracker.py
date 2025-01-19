@@ -177,7 +177,7 @@ HTTP_STATUS_OK = 200
 TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
-DEFAULT_SOUND_VOLUME = 55
+DEFAULT_SOUND_VOLUME = 60
 
 # Sonos speaker configurations
 SONOS_OFFICE_IP = "192.168.86.29"      # Office:1 Sonos speaker
