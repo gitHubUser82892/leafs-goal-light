@@ -299,7 +299,11 @@ def play_sounds(sound_files):
 
         original_volume = sonos.volume
 
-        if DEBUGMODE == True:
+        # Check the current time
+        current_time = datetime.now(pytz.timezone(TIMEZONE))
+        if current_time.hour >= 23 or current_time.hour < 8:
+            sonos.volume = 0
+        elif DEBUGMODE:
             sonos.volume = 15
         else:
             sonos.volume = DEFAULT_SOUND_VOLUME
