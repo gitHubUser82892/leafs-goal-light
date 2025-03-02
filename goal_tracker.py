@@ -1020,10 +1020,9 @@ if __name__ == "__main__":
     sys.stderr.reconfigure(line_buffering=True)
 
     debug_print(f"Checking that the network is accessible during start up...")
-    time.sleep(30)  # Additional delay to ensure all network services are up
     
     # Wait for network to be available
-    max_retries = 12  # Try for up to 2 minutes
+    max_retries = 30  # Try for up to 5 minutes
     retry_count = 0
     while retry_count < max_retries:
         try:
