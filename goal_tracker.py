@@ -178,6 +178,7 @@ TIMEZONE = 'US/Eastern'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
 DEFAULT_SOUND_VOLUME = 60
+SCORE_CHECK_INTERVAL = 8  # how many seconds between checking the score
 
 # Sonos speaker configurations
 SONOS_OFFICE_IP = "192.168.86.29"      # Office:1 Sonos speaker
@@ -435,6 +436,8 @@ def get_goal_scorer(gameId, debug=False):
     global most_recent_goal_event_id
     retry_count = -1
     error_count = 0  # Use this so we don't retry forever and get stuck
+    assist1_player_id = 0
+    assist2_player_id = 0
 
     debug_print(f"Starting goal scorer search for game {gameId}")
     try:
@@ -889,9 +892,29 @@ def goal_tracker_main():
     debug_print(f"***************************************************************************************")
     debug_print(f"")
 
-    # Start by getting the roster data and parsing it so we just have the player id and name
-
-    roster = get_toronto_roster() 
+    # Start by getting the roster data with retry logic
+    max_retries = 3
+    retry_count = 0
+    roster = None
+    
+    while roster is None and retry_count < max_retries:
+        try:
+            roster = get_toronto_roster()
+            if roster:
+                debug_print(f"Successfully retrieved roster data with {len(roster)} players")
+            else:
+                debug_print_error("get_toronto_roster() returned None")
+        except Exception as e:
+            retry_count += 1
+            if retry_count < max_retries:
+                wait_time = 30 * retry_count  # Increase wait time with each retry
+                debug_print_error(f"Failed to get roster (attempt {retry_count}/{max_retries}): {e}")
+                debug_print(f"Waiting {wait_time} seconds before retry...")
+                time.sleep(wait_time)
+            else:
+                debug_print_error(f"Failed to get roster after {max_retries} attempts. Initializing empty roster.")
+                roster = {}  # Initialize empty roster so the rest of the program can continue
+    
     time.sleep(10)  # Pause for 10 seconds to avoid hitting the API too quickly
 
 
@@ -965,7 +988,7 @@ def goal_tracker_main():
                 #check_scores(boxscore_data)  # Check the scores for new goals
                 playbyplay_data = get_play_by_play_data(gameId, False)  # Retrieve the current play-by-play data from the API
                 check_scores(playbyplay_data, gameId)  # Check the scores for new goals
-                time.sleep(10)  # Check scores every 10 seconds
+                time.sleep(SCORE_CHECK_INTERVAL)  # Check scores every few seconds
             except Exception as e:
                 debug_print_error(f"An error occurred during the game loop: {e}\nPausing for 30 seconds before retrying...\n")
                 time.sleep(30)  # Wait for 30 seconds before retrying
@@ -995,6 +1018,29 @@ if __name__ == "__main__":
     sys.stderr = log_file
     # Reconfigure stderr for immediate flushing
     sys.stderr.reconfigure(line_buffering=True)
+
+    debug_print(f"Checking that the network is accessible during start up...")
+    time.sleep(30)  # Additional delay to ensure all network services are up
+    
+    # Wait for network to be available
+    max_retries = 12  # Try for up to 2 minutes
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+            # Try to connect to Google's DNS to check basic connectivity
+            response = requests.get("https://8.8.8.8", timeout=5)
+            if response.status_code == 200:
+                debug_print(f"Network is accessible")
+                break
+        except requests.RequestException:
+            retry_count += 1
+            if retry_count < max_retries:
+                debug_print_error(f"Network not yet accessible (attempt {retry_count}/{max_retries}). Waiting 10 seconds...")
+                time.sleep(10)
+            else:
+                debug_print_error(f"Network still not accessible after {max_retries} attempts. Continuing anyway...")
+    
+
 
     goal_tracker_main()
 
