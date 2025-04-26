@@ -193,7 +193,6 @@ RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running t
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
 
-SOUND_BRADY_SUCKS_FILE = "/roster/BradySucks.mp3"  # Special webhook to play if Senators score
 
 # Global variables
 game_is_live = False
