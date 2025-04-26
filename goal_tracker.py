@@ -193,6 +193,8 @@ RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running t
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
 
+SOUND_BRADY_SUCKS_FILE = "/roster/BradySucks.mp3"  # Special webhook to play if Senators score
+
 # Global variables
 game_is_live = False
 game_about_to_start = False
@@ -205,6 +207,7 @@ roster = {}  # Dictionary to store the roster data
 most_recent_goal_event_id = 0  # the eventId of the most recent Toronto goal event
 sonos = None # Sonos speaker object
 active_sonos_ip = SONOS_FAMILY_ROOM_IP  # Default speaker, can be changed
+opponent_is_senators = False
 
 
 #
@@ -559,6 +562,9 @@ def check_scores(data, gameId):
                 toronto_goal = True
             if away_team_score > opponent_score:
                 debug_print(f"*** OPPONENT GOAL")
+                if opponent_is_senators:
+                    sounds_to_play = ["/roster/BradySucks.mp3"]
+                    play_sounds(sounds_to_play)
                 
             toronto_score = home_team_score  # Update the scores.  It's possible they decreased if the goal was disallowed
             opponent_score = away_team_score
@@ -568,6 +574,9 @@ def check_scores(data, gameId):
                 toronto_goal = True
             if home_team_score > opponent_score:
                 debug_print(f"*** OPPONENT GOAL")
+                if opponent_is_senators:
+                    sounds_to_play = ["/roster/BradySucks.mp3"]
+                    play_sounds(sounds_to_play)
 
             toronto_score = away_team_score
             opponent_score = home_team_score
@@ -680,6 +689,7 @@ def current_toronto_game():
     global game_today
     global game_about_to_start
     global wait_time
+    global opponent_is_senators
 
     today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
@@ -714,6 +724,13 @@ def current_toronto_game():
                                 opponent_city_name = game.get('homeTeam', {}).get('placeName', {}).get('default')
                                 opponent_team_name = game.get('homeTeam', {}).get('commonName', {}).get('default')
                                 debug_print(f"Toronto Maple Leafs are the away team and playing against the {opponent_city_name} {opponent_team_name}")
+
+                            # If the opponent_team_name is "Senators" then set opponent_is_senators to be True
+                            if opponent_team_name == "Senators":
+                                opponent_is_senators = True
+                                debug_print("Opponent is the Senators!")
+                            else:
+                                opponent_is_senators = False
 
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
