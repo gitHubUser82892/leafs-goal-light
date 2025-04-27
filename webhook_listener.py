@@ -10,6 +10,7 @@ Routes:
 - /webhook/gitcommit: Listens for POST requests from the webhook.
 - /files/leafs_game_start.mp3: Serves the game start sound.
 - /files/leafs_goal_horn.mp3: Serves the goal sound.
+- /files/Boo.mp3: Serves the boo sound for when the opposing team scores.
 - /roster/<filename>: Serves any MP3 file in the roster directory.
 - /league/<filename>: Serves any MP3 file in the league directory.
 - /webhook/lightandsound: Manually invoke the light and sound.

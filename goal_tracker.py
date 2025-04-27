@@ -192,6 +192,7 @@ RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running t
 
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
+SOUND_BOO_FILE = "/files/Boo.mp3"  # Webhook to get the file returned from the webserver
 
 
 # Global variables
@@ -561,6 +562,7 @@ def check_scores(data, gameId):
                 toronto_goal = True
             if away_team_score > opponent_score:
                 debug_print(f"*** OPPONENT GOAL")
+                play_sounds(SOUND_BOO_FILE)
                 if opponent_is_senators:
                     sounds_to_play = ["/roster/BradySucks.mp3"]
                     play_sounds(sounds_to_play)
@@ -573,6 +575,7 @@ def check_scores(data, gameId):
                 toronto_goal = True
             if home_team_score > opponent_score:
                 debug_print(f"*** OPPONENT GOAL")
+                play_sounds(SOUND_BOO_FILE)
                 if opponent_is_senators:
                     sounds_to_play = ["/roster/BradySucks.mp3"]
                     play_sounds(sounds_to_play)
