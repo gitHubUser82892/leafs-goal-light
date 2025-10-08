@@ -625,7 +625,7 @@ def check_scores(data, gameId):
 def get_toronto_roster():
     debug_print(f"Retrieving roster data...")
     roster = {}
-    endpoint = "v1/roster/TOR/20242025"
+    endpoint = "v1/roster/TOR/20252026"
 
     try:
         data = get_apiweb_nhl_data(endpoint)
