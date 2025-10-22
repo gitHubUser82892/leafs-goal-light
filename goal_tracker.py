@@ -174,7 +174,7 @@ def function_debug_decorator(func):
 # Constants - these should never change
 TORONTO_TEAM_ID = 10
 HTTP_STATUS_OK = 200
-TIMEZONE = 'US/Eastern'
+TIMEZONE = 'America/New_York'
 DEFAULT_WAIT_TIME = 1*60  # 5 minutes
 DEBUGMODE = False
 DEFAULT_SOUND_VOLUME = 60
@@ -737,7 +737,7 @@ def current_toronto_game():
                             # Calculations on the start time and delta from the current time
                             startTimeUTC = game.get('startTimeUTC')
                             start_time = datetime.strptime(startTimeUTC, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.utc).astimezone(pytz.timezone(TIMEZONE))
-                            current_time = datetime.now(pytz.timezone('US/Eastern'))
+                            current_time = datetime.now(pytz.timezone(TIMEZONE))
                             time_delta = (start_time - current_time)
 
                             debug_print(f"Current time: {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -992,7 +992,7 @@ def goal_tracker_main():
                 # Round down to the nearest hour and wait until then to check the game again
                 hours, remainder = divmod(wait_time, 3600)
                 minutes, _ = divmod(remainder, 60)
-                next_check_time = datetime.now(pytz.timezone('US/Eastern')) + timedelta(seconds=wait_time)
+                next_check_time = datetime.now(pytz.timezone(TIMEZONE)) + timedelta(seconds=wait_time)
                 debug_print(f"No active game. Waiting {int(hours)} hours and {int(minutes)} minutes... until {next_check_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
                 time.sleep(wait_time) 
                 wait_time = DEFAULT_WAIT_TIME  # reset the wait time to 5 minutes for next time
