@@ -1037,8 +1037,8 @@ if __name__ == "__main__":
     #if DEBUGMODE:
     #    log_file = sys.stdout
     #else:
-        # Open a file for logging and set sys.stdout to the file
-    log_file = open('/app/output.log', 'a')
+        # Open a file for logging and set sys.stdout to the file (write mode to start fresh each time)
+    log_file = open('/app/output.log', 'w')
         # Redirect stdout to the file
     sys.stdout = log_file
 
