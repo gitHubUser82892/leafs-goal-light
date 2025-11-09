@@ -188,7 +188,19 @@ SONOS_BEAM_IP = "192.168.86.196"       # Family Room Beam Sonos speaker
 # Configuration - these can be changed at runtime
 
 
-RASPPI_IP = "192.168.86.61:5000"  # This is the IP of the Raspberry Pi running the webserver
+# Get local IP dynamically
+import socket
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+RASPPI_IP = f"{get_local_ip()}:5000"  # Dynamic IP of this machine
 
 SOUND_GAME_START_FILE = "/files/leafs_game_start.mp3"  # Webhook to get the file returned from the webserver
 SOUND_GOAL_HORN_FILE = "/files/leafs_goal_horn.mp3"  # Webhook to get the file returned from the webserver
@@ -1026,7 +1038,7 @@ if __name__ == "__main__":
     #    log_file = sys.stdout
     #else:
         # Open a file for logging and set sys.stdout to the file
-    log_file = open('/home/rmayor/Projects/leafs_goal_light/output.log', 'a')
+    log_file = open('/app/output.log', 'a')
         # Redirect stdout to the file
     sys.stdout = log_file
 

@@ -7,7 +7,7 @@ import soco
 from datetime import datetime
 from datetime import timedelta
 
-SONOS_IP = "192.168.86.29"  #  Office:1 Sonos speaker
+SONOS_IP = "192.168.86.36"  #  Office:1 Sonos speaker
 #SONOS_IP = "192.168.86.196" #  Family Room Beam Sonos speaker
 #SONOS_IP = "192.168.86.46"  # FamilyRoom2 speaker
 
