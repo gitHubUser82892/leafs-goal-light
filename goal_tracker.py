@@ -85,8 +85,8 @@ def debug_print(message, indent_change=0):
     # Create indent string based on current level
     indent = "| " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
-    # Print message with timestamp and indentation
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
+    # Print message with timestamp in the correct timezone and indentation
+    print(f"[{datetime.now(pytz.timezone(TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')}]: {indent}{message}")
 
 
 def debug_print_error(message, indent_change=0):
@@ -117,8 +117,8 @@ def debug_print_error(message, indent_change=0):
     # Create indent string based on current level
     indent = "|  " * max(0, indent_level) if func_name != 'goal_tracker_main' else ""
     
-    # Print message with timestamp, function name, line number, and indentation
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}: {indent}{message}")
+    # Print message with timestamp in the correct timezone, function name, line number, and indentation
+    print(f"[{datetime.now(pytz.timezone(TIMEZONE)).strftime('%Y-%m-%d %H:%M:%S')}] ERROR in {func_name}() line {line_no}: {indent}{message}")
 
 
 def function_debug_decorator(func):
