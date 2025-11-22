@@ -705,7 +705,7 @@ def current_toronto_game():
     global wait_time
     global opponent_is_senators
 
-    today_date = f"{datetime.now().strftime('%Y-%m-%d')}"
+    today_date = f"{datetime.now(pytz.timezone(TIMEZONE)).strftime('%Y-%m-%d')}"
     endpoint = "v1/schedule/" + today_date
 
     debug_print(f"Checking schedule for {today_date}")
