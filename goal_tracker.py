@@ -180,10 +180,8 @@ DEBUGMODE = False
 DEFAULT_SOUND_VOLUME = 60
 SCORE_CHECK_INTERVAL = 8  # how many seconds between checking the score
 
-# Sonos speaker configurations
-SONOS_OFFICE_IP = "192.168.86.29"      # Office:1 Sonos speaker
-SONOS_FAMILY_ROOM_IP = "192.168.86.36" # FamilyRoom2 speaker
-SONOS_BEAM_IP = "192.168.86.196"       # Family Room Beam Sonos speaker
+# Import Sonos speaker configurations from shared config
+from config import SONOS_OFFICE_IP, SONOS_FAMILY_ROOM_IP, SONOS_BEAM_IP
 
 # Configuration - these can be changed at runtime
 

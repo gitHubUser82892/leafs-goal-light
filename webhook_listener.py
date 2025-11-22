@@ -5,14 +5,30 @@ Webhook Listener Service
 Flask application that serves MP3 files and manages the goal_tracker process.
 """
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request, abort
 import os
 import time
 import signal
 import subprocess
 from goal_tracker import activate_goal_light, play_sounds
+from config import SONOS_SPEAKER_IPS
 
 app = Flask(__name__)
+
+# Security: Whitelist of allowed IPs for webhook endpoints (Sonos speakers, Home Assistant, local machine)
+# Sonos IPs are imported from config.py - update them there if they change
+ALLOWED_IPS = set(SONOS_SPEAKER_IPS) | {
+    '127.0.0.1',       # Localhost
+    # Add Home Assistant IP if you want to use the manual webhook
+    # 'x.x.x.x',
+}
+
+def check_ip_whitelist():
+    """Check if the requesting IP is in the whitelist"""
+    client_ip = request.remote_addr
+    if client_ip not in ALLOWED_IPS:
+        print(f"Access denied from IP: {client_ip}")
+        abort(403)  # Forbidden
 
 # Process and directory configuration
 PROCESS_NAME = "python3 /app/goal_tracker.py"
@@ -75,7 +91,8 @@ def serve_league_mp3(filename):
 @app.route('/webhook/lightandsound', methods=['POST'])
 def lightandsound():
     """Manually trigger the goal light and sound"""
-    print("Manually playing the light and sound")
+    check_ip_whitelist()  # Security check
+    print(f"Manually playing the light and sound (triggered by {request.remote_addr})")
     try:
         activate_goal_light(1)
         play_sounds("/files/leafs_goal_horn.mp3")
@@ -114,4 +131,20 @@ if __name__ == '__main__':
     start_process(PROCESS_NAME)
     
     # Start Flask server (disable debug in production)
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # Bind to local network interface only for security
+    # This prevents external access while allowing Sonos speakers to connect
+    import socket
+    
+    def get_local_ip():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+            s.close()
+            return ip
+        except:
+            return "127.0.0.1"
+    
+    local_ip = get_local_ip()
+    print(f"Starting Flask server on {local_ip}:5000 (local network only)")
+    app.run(host=local_ip, port=5000, debug=False)
