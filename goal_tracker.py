@@ -788,7 +788,7 @@ def current_toronto_game():
                                     wait_time = 5 * 60  # If it's less than an hour in the future, then recheck in 5 minutes
                                     debug_print(f"Wait time set to 5 minutes")
                                 return None                            
-                            elif time_delta < timedelta(hours=-1) and gameState != 'LIVE':   # Start time at least an hour in the past 
+                            elif time_delta < timedelta(hours=-1) and gameState != 'LIVE':   # Start time at least an hour ago 
                                 debug_print(f"!LIVE  Game started at least an hour ago and is not live. GameState: {gameState}")
                                 game_today = False  # Don't check again until tomorrow
                                 game_is_live = False
@@ -814,16 +814,31 @@ def current_toronto_game():
                                 return None
 
                     debug_print(f"No Toronto games today")
+                    game_today = False
+                    game_about_to_start = False
+                    game_is_live = False
                     return None
                 else:
                     debug_print(f"No games today")
+                    game_today = False
+                    game_about_to_start = False
+                    game_is_live = False
                     return None
         except KeyError as e:
             debug_print_error(f"Key error while parsing schedule data: {e}")
+            game_today = False
+            game_about_to_start = False
+            game_is_live = False
         except Exception as e:
             debug_print_error(f"Unexpected error while parsing schedule data: {e}")
+            game_today = False
+            game_about_to_start = False
+            game_is_live = False
     else:
         debug_print_error("Failed to retrieve data")
+        game_today = False
+        game_about_to_start = False
+        game_is_live = False
     return None
 
 
@@ -995,6 +1010,14 @@ def goal_tracker_main():
         gameId = current_toronto_game()
 
         if game_today == True:
+            # FIX: Add defensive check to prevent infinite loop
+            if gameId is None:
+                debug_print("WARNING: game_today is True but gameId is None. Resetting flags.")
+                game_today = False
+                game_about_to_start = False
+                game_is_live = False
+                continue
+
             if (game_is_live == True):
                 debug_print(f"Game has already started\n")
             elif (game_about_to_start == True):
