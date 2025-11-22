@@ -1010,20 +1010,26 @@ def goal_tracker_main():
         gameId = current_toronto_game()
 
         if game_today == True:
-            # FIX: Add defensive check to prevent infinite loop
-            if gameId is None:
-                debug_print("WARNING: game_today is True but gameId is None. Resetting flags.")
+            # gameId can be None when the game is scheduled for later (FUT state)
+            # This is normal and we should proceed to the wait logic
+            if gameId is None and not game_about_to_start:
+                # Game is scheduled but not yet close to start time
+                # Fall through to wait logic below
+                pass
+            elif gameId is None and game_about_to_start:
+                # This should not happen - if game is about to start, we should have a gameId
+                debug_print("WARNING: game_about_to_start is True but gameId is None. Resetting flags.")
                 game_today = False
                 game_about_to_start = False
                 game_is_live = False
                 continue
 
-            if (game_is_live == True):
+            if gameId and (game_is_live == True):
                 debug_print(f"Game has already started\n")
-            elif (game_about_to_start == True):
+            elif gameId and (game_about_to_start == True):
                 debug_print(f"Game about to start!  Waiting 20 seconds...\n")
                 time.sleep(20)  # Check every 20 seconds if the game is about to start
-            else: 
+            elif gameId is None or (gameId and not game_is_live and not game_about_to_start): 
                 # Round down to the nearest hour and wait until then to check the game again
                 hours, remainder = divmod(wait_time, 3600)
                 minutes, _ = divmod(remainder, 60)
