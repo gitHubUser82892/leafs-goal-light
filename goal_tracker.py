@@ -181,7 +181,7 @@ DEFAULT_SOUND_VOLUME = 60
 SCORE_CHECK_INTERVAL = 8  # how many seconds between checking the score
 
 # Import Sonos speaker configurations from shared config
-from config import SONOS_OFFICE_IP, SONOS_FAMILY_ROOM_IP, SONOS_BEAM_IP
+from config import SONOS_OFFICE_IP, SONOS_FAMILY_ROOM_IP, SONOS_BEAM_IP, HOME_ASSISTANT_IP
 
 # Configuration - these can be changed at runtime
 
@@ -224,8 +224,8 @@ opponent_is_senators = False
 # Home Assistant Webook URL with private key
 #
 # I'm ok with this being in the code, as it's a webhook that is only accessible from my local network
-HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT = "http://homeassistant.local:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
-HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = "http://homeassistant.local:8123/api/webhook/nhl_game_about_to_start-q2NblABPRjzDLhwSNeH2dlpD"
+HA_WEBHOOK_URL_ACTIVATE_GOAL_LIGHT = f"http://{HOME_ASSISTANT_IP}:8123/api/webhook/-kh7S2pAv4MiS1H2ghDvpxTND"
+HA_WEBHOOK_URL_NOTIFY_GAME_ABOUT_TO_START = f"http://{HOME_ASSISTANT_IP}:8123/api/webhook/nhl_game_about_to_start-q2NblABPRjzDLhwSNeH2dlpD"
 
 
 #
